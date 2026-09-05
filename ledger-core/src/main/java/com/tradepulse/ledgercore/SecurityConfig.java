@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 
 /**
  * Phase 1: JWKS-based JWT verification.
@@ -34,9 +35,15 @@ public class SecurityConfig {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
                 .jwsAlgorithm(SignatureAlgorithm.ES256)
                 .build();
+
         OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt> withIssuer =
                 JwtValidators.createDefaultWithIssuer(issuerUri);
-        decoder.setJwtValidator(withIssuer);
+        OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt> withAudience =
+                new AudienceValidator();
+        OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt> combined =
+                new DelegatingOAuth2TokenValidator<>(withIssuer, withAudience);
+
+        decoder.setJwtValidator(combined);
         return decoder;
     }
 

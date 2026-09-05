@@ -39,7 +39,7 @@ def get_current_user(
             signing_key.key,
             algorithms=["ES256"],
             issuer=settings.supabase_jwt_issuer,
-            options={"verify_aud": False},
+            audience="authenticated",
         )
     except jwt.PyJWTError as exc:
         raise HTTPException(status_code=401, detail=f"Invalid token: {exc}")
