@@ -24,3 +24,4 @@ node_modules/
 .terraform/
 *.tfstate
 *.tfstate.*
+set-env.sh

@@ -14,6 +14,12 @@
 # variables / a local .env, which .gitignore already excludes.
 
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://psbxribzhqycoogqeiuh.supabase.co/auth/v1/.well-known/jwks.json
+          issuer-uri: https://psbxribzhqycoogqeiuh.supabase.co/auth/v1
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}

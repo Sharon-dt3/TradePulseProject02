@@ -1,30 +1,52 @@
 package com.tradepulse.ledgercore;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtDecoders;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Phase 0 baseline security config.
+ * Phase 1: JWKS-based JWT verification.
  *
- * spring-boot-starter-oauth2-resource-server is on the classpath already
- * (added ahead of time for Phase 1's JWKS verification work), which makes
- * Spring Security auto-lock every endpoint behind HTTP Basic by default.
- * Until Phase 1 actually wires up JWKS-based verification, this config
- * just leaves /actuator/health open — matching Phase 1's own stated rule
- * that health endpoints stay exempt from auth — and requires
- * authentication on everything else as a safe default in the meantime.
+ * Verifies every request's Bearer token against Supabase's public signing
+ * key (ES256), checking signature, exp, and iss — not just that the token
+ * parses. /actuator/health stays exempt, per BLUEPRINT.md §4.
  */
 @Configuration
 public class SecurityConfig {
 
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private String jwkSetUri;
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    private String issuerUri;
+
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
+                .jwsAlgorithm(SignatureAlgorithm.ES256)
+                .build();
+        OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt> withIssuer =
+                JwtValidators.createDefaultWithIssuer(issuerUri);
+        decoder.setJwtValidator(withIssuer);
+        return decoder;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health").permitAll()
-                .anyRequest().authenticated()
-        );
+                        .requestMatchers("/actuator/health").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())));
         return http.build();
     }
 }
