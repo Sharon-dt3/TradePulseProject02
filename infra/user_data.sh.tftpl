@@ -1,0 +1,31 @@
+#!/bin/bash
+# Phase 0: EC2 user-data template, written against the Supabase connection
+# model (no RDS endpoint, no SQLite path — greenfield, see BLUEPRINT.md §5).
+#
+# Template variables are injected by Terraform (templatefile(...)):
+#   pooled_db_url         - Supavisor pooled connection string (app traffic)
+#   supabase_service_role_key
+#   supabase_anon_key
+
+set -euo pipefail
+
+# Application runtime env — ledger-core and risk-engine read these.
+# Only these two services ever receive DB credentials (BLUEPRINT.md §4).
+cat <<EOF > /etc/tradepulse/env
+SPRING_DATASOURCE_URL=${pooled_db_url}
+DATABASE_URL=${pooled_db_url}
+SUPABASE_SERVICE_ROLE_KEY=${supabase_service_role_key}
+SUPABASE_ANON_KEY=${supabase_anon_key}
+EOF
+
+chmod 600 /etc/tradepulse/env
+
+# Migrations (Flyway/Alembic) are NOT run from this user-data script — they
+# run against the direct/unpooled connection string as a separate, explicit
+# step (CI or a manual `flyway migrate` / `alembic upgrade head`), never as
+# part of instance bootstrap, to avoid every new instance racing to apply
+# migrations concurrently.
+
+systemctl daemon-reload
+systemctl enable tradepulse-app.service
+systemctl start tradepulse-app.service

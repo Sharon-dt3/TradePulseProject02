@@ -1,0 +1,49 @@
+# Phase 0: Supabase connection wiring for ledger-core.
+#
+# Two distinct connection strings, per BLUEPRINT.md §5:
+#   - SPRING_DATASOURCE_URL: Supavisor pooled (transaction mode), port 6543.
+#     Used by all application/runtime traffic (JPA/Hibernate, HikariCP).
+#   - SPRING_FLYWAY_URL: direct/unpooled connection, port 5432.
+#     Used ONLY by Flyway to run migrations. Never used by app traffic.
+#
+# Both are Supabase connection strings for the tradePulseProject instance
+# (project ref psbxribzhqycoogqeiuh, region us-east-1) — see your Supabase
+# dashboard: Project Settings -> Database -> Connection string, for both the
+# "Transaction pooler" (Supavisor, 6543) and "Direct connection" (5432)
+# variants. Never commit the actual values — they come from environment
+# variables / a local .env, which .gitignore already excludes.
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      # Phase 0 checklist item: test Supavisor transaction-mode pooling
+      # against HikariCP/JDBC prepared-statement caching; disable caching
+      # here if it misbehaves under the pooler.
+      data-source-properties:
+        prepareThreshold: 0
+        cachePrepStmts: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    url: ${SPRING_FLYWAY_URL}
+    user: ${SPRING_FLYWAY_USERNAME:postgres}
+    password: ${SPRING_FLYWAY_PASSWORD}
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
