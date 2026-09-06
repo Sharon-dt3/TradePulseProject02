@@ -431,7 +431,7 @@ second time. An Admin adjustment requires two distinct approving
 identities; a self-approval attempt is rejected by the database constraint
 even if the application layer somehow didn't catch it.
 
-**Status:** not started.
+**Status:** done — all four checklist items built and live-verified; both checkpoints confirmed (ticket reuse rejected; self-approval rejected by both the service layer and, independently, the database CHECK via a raw SQL attempt). Committed as 31dbdeb.
 
 ---
 
@@ -440,15 +440,15 @@ even if the application layer somehow didn't catch it.
 **Depends on:** Phase 4 and Phase 7 already being solid.
 
 **Task checklist (not to be started in this build):**
-- [ ] Confirm margin-enabled accounts and real short-selling rules remain
+- [x] Confirm margin-enabled accounts and real short-selling rules remain
       undesigned/undeferred-only — a deliberate future feature with its own
       rule set (tighter notional limit, `margin_used` tracked separately
       from cash), not a side effect of an existing check.
-- [ ] Confirm correlation-aware VaR remains deferred, pending enough
+- [x] Confirm correlation-aware VaR remains deferred, pending enough
       overlapping historical data to estimate covariance honestly.
-- [ ] Confirm a price-time-priority matching engine and multi-venue order
+- [x] Confirm a price-time-priority matching engine and multi-venue order
       routing remain excluded even after Phase 11 is eventually scoped.
-- [ ] Confirm each excluded item is visible as a comment/doc reference at
+- [x] Confirm each excluded item is visible as a comment/doc reference at
       the point the simpler approach was chosen (Phase 7's zero-correlation
       note, Phase 4's no-margin note), so it reads as "deferred, here's
       why," not a surprise.
@@ -457,7 +457,7 @@ even if the application layer somehow didn't catch it.
 initial build. The checkpoint is that its exclusion stays documented, not
 silently dropped.
 
-**Status:** not started — intentionally deferred, not scheduled.
+**Status:** audited — all four exclusions confirmed still deferred and documented at their point of decision (ComplianceRules/RejectionReason for margin, risk_calculator.py for correlation-aware VaR, Order.java's Status/fill() javadoc for the matching engine and multi-venue routing, strengthened this pass to explicitly reference Phase 11). No implementation started, as intended.
 
 ---
 

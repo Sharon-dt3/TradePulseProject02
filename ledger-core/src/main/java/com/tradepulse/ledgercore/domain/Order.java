@@ -54,7 +54,10 @@ public class Order {
     /**
      * All seven states are declared since Phase 3 — WORKING/EXPIRED are
      * Phase 8's (PARTIALLY_FILLED still belongs to a matching engine this
-     * project doesn't have; CANCELLED to a not-yet-built cancel
+     * project doesn't have — a price-time-priority matching engine and
+     * multi-venue order routing are a deliberately deferred Phase 11
+     * feature with its own design, not an oversight or a permanently
+     * excluded capability; CANCELLED to a not-yet-built cancel
      * endpoint). Matches V11__orders.sql's status CHECK.
      */
     public enum Status {
@@ -162,7 +165,10 @@ public class Order {
      * or LIMIT) or WORKING -> FILLED (a LIMIT order filled by a later
      * crossing tick). There is no PARTIALLY_FILLED path yet (that needs a
      * matching engine or partial-liquidity model this project doesn't
-     * build).
+     * build now — see Status's javadoc: a price-time-priority matching
+     * engine and multi-venue routing remain excluded even once Phase 11
+     * is eventually scoped, since this project settles every order
+     * against a single reference price rather than a book).
      */
     public void fill() {
         requireStatusIn(Status.NEW, Status.WORKING);
