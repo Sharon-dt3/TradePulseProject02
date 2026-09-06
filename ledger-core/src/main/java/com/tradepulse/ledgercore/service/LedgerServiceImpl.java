@@ -94,7 +94,7 @@ public class LedgerServiceImpl implements LedgerService {
         Trade trade = new Trade(orderId, accountId, symbol, side, quantity, price, executedAt);
         tradeRepository.save(trade);
 
-        JournalEntry journalEntry = new JournalEntry(trade.getId(), "Trade settlement for " + symbol);
+        JournalEntry journalEntry = JournalEntry.forTrade(trade.getId(), "Trade settlement for " + symbol);
         journalEntryRepository.save(journalEntry);
 
         JournalLine journalLine = new JournalLine(journalEntry.getId(), accountId, cashDelta);

@@ -10,9 +10,11 @@ import (
 // risk-engine already verify against (BLUEPRINT.md §4) — all three
 // services trust the same Supabase Auth instance.
 type Config struct {
-	Port      string
-	JWKSURL   string
-	JWTIssuer string
+	Port          string
+	JWKSURL       string
+	JWTIssuer     string
+	RedisAddr     string
+	AllowedOrigin string
 }
 
 // Load reads required environment variables, failing fast with a clear
@@ -33,5 +35,31 @@ func Load() (Config, error) {
 		port = "8081"
 	}
 
-	return Config{Port: port, JWKSURL: jwksURL, JWTIssuer: issuer}, nil
+	// Phase 10: same REDIS_HOST/REDIS_PORT convention ledger-core's
+	// application.yml already uses, so the two services agree on where
+	// Redis lives without needing a third naming scheme.
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "localhost"
+	}
+	redisPort := os.Getenv("REDIS_PORT")
+	if redisPort == "" {
+		redisPort = "6379"
+	}
+
+	// Same default and env-var naming convention as ledger-core's
+	// ledger.cors.allowed-origins - both services front the same
+	// dashboard, so they should agree on where it's allowed from.
+	allowedOrigin := os.Getenv("GATEWAY_CORS_ALLOWED_ORIGINS")
+	if allowedOrigin == "" {
+		allowedOrigin = "http://localhost:3000"
+	}
+
+	return Config{
+		Port:          port,
+		JWKSURL:       jwksURL,
+		JWTIssuer:     issuer,
+		RedisAddr:     redisHost + ":" + redisPort,
+		AllowedOrigin: allowedOrigin,
+	}, nil
 }

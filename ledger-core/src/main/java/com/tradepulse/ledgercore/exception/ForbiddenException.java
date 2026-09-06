@@ -17,6 +17,17 @@ public class ForbiddenException extends ApiException {
         return new ForbiddenException("Missing required permission: " + permission);
     }
 
+    /**
+     * Phase 10: the service-layer half of dual control. The database's
+     * ledger_adjustments_dual_control CHECK is the real enforcement -
+     * this exists only so a caller who tries to approve their own
+     * proposal gets a clean 403 instead of a raw constraint-violation
+     * 500.
+     */
+    public static ForbiddenException selfApprovalNotAllowed() {
+        return new ForbiddenException("A ledger adjustment cannot be approved by the same user who proposed it");
+    }
+
     @Override
     public String getCode() {
         return "FORBIDDEN";

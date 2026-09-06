@@ -94,6 +94,14 @@ ledger:
   limit-order-expiry-sweep-interval-ms: ${LEDGER_LIMIT_ORDER_EXPIRY_SWEEP_INTERVAL_MS:60000}
   cors:
     allowed-origins: ${LEDGER_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  # Phase 10: SSE stream ticket issuance. EventSource can't set headers,
+  # so raw JWTs never go in the SSE URL - ledger-core issues a short-
+  # lived, single-use opaque ticket instead (BLUEPRINT.md's "SSE auth").
+  # 30s is deliberately short: a ticket only needs to survive the gap
+  # between this REST call returning and the client immediately opening
+  # EventSource with it, not the SSE connection's own lifetime.
+  sse:
+    ticket-ttl-seconds: ${LEDGER_SSE_TICKET_TTL_SECONDS:30}
   # Phase 9: server-side statement generation (StatementService) and
   # Supabase Storage upload for the private "statements" bucket.
   # service-role key is required because ledger-core uploads via the

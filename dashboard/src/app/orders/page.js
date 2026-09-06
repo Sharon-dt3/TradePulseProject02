@@ -4,20 +4,24 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { ledgerCoreFetch } from "@/lib/api/client";
+import { openLiveStream } from "@/lib/api/stream";
 
 const POLL_INTERVAL_MS = 5000;
 
 /**
  * Lists the caller's orders, newest first, straight off GET /orders, and
  * lets them place a new MARKET order via POST /orders (see
- * ledger-core/API.md for both). Polls on an interval rather than opening
- * a stream — ticket-authenticated SSE is Phase 10's job, so this view
- * stays a plain REST read until that lands.
+ * ledger-core/API.md for both). Data still comes from polling, not the
+ * SSE connection below — the gateway's /sse endpoint doesn't fan out
+ * real order/risk events yet, only a connected heartbeat, so the
+ * ticket-authenticated stream here is proof the auth path works, not
+ * yet this view's actual data source.
  */
 export default function OrdersPage() {
   const { user, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState(null);
+  const [liveConnected, setLiveConnected] = useState(false);
 
   const [symbol, setSymbol] = useState("");
   const [side, setSide] = useState("BUY");
@@ -62,6 +66,30 @@ export default function OrdersPage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+    let eventSource;
+
+    openLiveStream()
+      .then((es) => {
+        if (cancelled) {
+          es.close();
+          return;
+        }
+        eventSource = es;
+        eventSource.addEventListener("connected", () => setLiveConnected(true));
+        eventSource.onerror = () => setLiveConnected(false);
+      })
+      .catch(() => setLiveConnected(false));
+
+    return () => {
+      cancelled = true;
+      eventSource?.close();
+    };
+  }, [user]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError(null);
@@ -76,6 +104,7 @@ export default function OrdersPage() {
           side,
           orderType: "MARKET",
           quantity: Number(quantity),
+          requestId: crypto.randomUUID(),
         }),
       });
       setLastResult(result);
@@ -104,7 +133,12 @@ export default function OrdersPage() {
       <p>
         <Link href="/">&larr; Back</Link>
       </p>
-      <h1>Orders</h1>
+      <h1>
+        Orders{" "}
+        <span style={{ fontSize: 12, color: liveConnected ? "green" : "#999" }}>
+          {liveConnected ? "● live" : "○ connecting..."}
+        </span>
+      </h1>
 
       <form
         onSubmit={handleSubmit}
