@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { authHeaders } from "@/lib/api/client";
 
@@ -49,6 +50,9 @@ export default function Home() {
     <div style={{ padding: 24 }}>
       <h1>Signed in as {user.email}</h1>
       <p>User ID: {user.id}</p>
+      <p>
+        <Link href="/orders">View orders</Link>
+      </p>
       <button onClick={handleShowHeader}>Show authHeaders()</button>
       {header && <pre>{JSON.stringify(header, null, 2)}</pre>}
       <button onClick={signOut}>Sign out</button>
