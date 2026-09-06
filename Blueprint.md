@@ -187,12 +187,11 @@ interim state, never open-by-default.
 
 - **Error shape:** `{code, message}` adopted platform-wide starting Phase 3
   — every service that returns an error after that point uses this shape.
-- **Frozen contracts:** any type explicitly declared "frozen-v1" (candidate:
-  `TradeResult.rejection_reason`, see §7 OD-2) requires a version bump or a
-  documented exception to add a new value — never a silent edit. Whether
-  `rejection_reason` is frozen from its first commit or left open until v1
-  ships is OD-2's open question; until resolved, Phase 4 cannot finalize
-  its rejection-reason handling.
+- **Frozen contracts:** any type explicitly declared "frozen-v1" requires a
+  version bump or a documented exception to add a new value — never a
+  silent edit. `TradeResult.rejection_reason` is not such a type: OD-2
+  (§7) resolved it as left open until v1 ships, so new values (e.g.
+  Phase 4's `INSUFFICIENT_POSITION`) may be added freely for now.
 - **Idempotency:** canonical-JSON SHA-256 over meaningful order fields
   (excluding `request_id`/timestamps), decimal-scale-normalized before
   hashing, so `"10.0"` and `"10.00"` don't produce false conflicts.
@@ -212,9 +211,8 @@ interim state, never open-by-default.
 |---|---|---|---|
 | **OD-0** | Is this a migration of an existing codebase, or a greenfield build? | **Resolved: greenfield.** | Repo confirmed empty at Phase B start — no legacy TradePulse code exists anywhere to preserve, extend, or migrate. Every "preserve/extend/migrate X" instruction in the source mission is read as "implement X to spec directly." Phase order and dependencies (B→0→1→2→3→4/5/6→7‖→8→9→10→11-deferred) are unchanged by this — they reflect build-order dependencies, not migration mechanics. |
 | **OD-1** | Local Postgres Docker Compose as an offline-dev fallback, or Supabase-required even locally? | **Resolved: Supabase-only, no local fallback.** | A real Supabase project (`tradePulseProject`, `us-east-1`) already exists. RLS (Phase 0) and the `authorize()`/claim-hook RBAC model (Phase 2) are Supabase-native — a local Postgres fallback would test a materially weaker security model, defeating the purpose of catching RLS/auth bugs early, and would require hand-syncing two migration paths (Flyway + Alembic against two targets) with real drift risk. Downside accepted: no fully offline dev workflow. |
-| **OD-2** | Should `TradeResult.rejection_reason` be declared frozen-v1 from its very first commit, or left open until v1 ships? | **Unresolved — blocks Phase 4, does not block Phases 0–3.** | Frozen-from-commit-one forces careful enum/version handling immediately (safer for external consumers, more overhead now). Left-open avoids the constraint until v1 actually ships (less overhead now, risk of an uncontrolled breaking change later if consumers appear before the decision is revisited). Needs the user's call before Phase 4's rejection-reason logic (including `INSUFFICIENT_POSITION`) is finalized. |
+| **OD-2** | Should `TradeResult.rejection_reason` be declared frozen-v1 from its very first commit, or left open until v1 ships? | **Resolved: left open until v1 ships.** | Matches what Phase 3 already implemented — `RejectionReason`'s javadoc and `V12__orders_rejection_reason.sql` both already document it as deliberately non-frozen. New rejection reasons (e.g. Phase 4's `INSUFFICIENT_POSITION`) may be added freely; this gets revisited only if an external consumer starts depending on today's exact value set. |
 
 Gate for Phase B (per `IMPLEMENTATION_PLAN.md`): no source file outside
 this document and `IMPLEMENTATION_PLAN.md` may be touched until OD-0 and
-OD-1 are resolved. Both are resolved above; OD-2 remains open and explicitly
-does not block Phase 0–3 work.
+OD-1 are resolved. All three are resolved above — OD-2's resolution unblocks Phase 4.
