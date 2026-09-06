@@ -1,6 +1,7 @@
 package com.tradepulse.ledgercore.repository;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +27,12 @@ import com.tradepulse.ledgercore.domain.Trade;
  */
 public interface TradeRepository extends JpaRepository<Trade, UUID> {
     List<Trade> findByOrderIdIn(Collection<UUID> orderIds);
+
+    // Phase 9: backs StatementService's statement-period trade listing.
+    // executedAt is stored per-trade (not the enclosing order), so this
+    // filters directly on it rather than joining through orders.
+    List<Trade> findByAccountIdAndExecutedAtBetweenOrderByExecutedAtAsc(
+            UUID accountId, OffsetDateTime start, OffsetDateTime end);
 
     @Query("""
             SELECT COALESCE(SUM(

@@ -94,6 +94,22 @@ ledger:
   limit-order-expiry-sweep-interval-ms: ${LEDGER_LIMIT_ORDER_EXPIRY_SWEEP_INTERVAL_MS:60000}
   cors:
     allowed-origins: ${LEDGER_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  # Phase 9: server-side statement generation (StatementService) and
+  # Supabase Storage upload for the private "statements" bucket.
+  # service-role key is required because ledger-core uploads via the
+  # Storage HTTP API, which enforces Storage RLS unless bypassed by
+  # service_role - same reasoning as ledger-core's own Postgres
+  # connection bypassing table RLS.
+  statements:
+    supabase-url: ${SUPABASE_URL}
+    supabase-service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+    retention-years: ${LEDGER_STATEMENTS_RETENTION_YEARS:7}
+    # How often StatementRetentionJob checks for statement objects past
+    # retention-years. Year-scale retention doesn't need minute-scale
+    # polling like the LIMIT order expiry sweep - daily is plenty, and
+    # still env-overridable for testing (a short interval to verify the
+    # sweep without waiting years for a real object to age out).
+    retention-sweep-interval-ms: ${LEDGER_STATEMENTS_RETENTION_SWEEP_INTERVAL_MS:86400000}
 
 server:
   port: 8080
