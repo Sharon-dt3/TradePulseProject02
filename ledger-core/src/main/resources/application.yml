@@ -28,6 +28,13 @@ spring:
       # Phase 0 checklist item: test Supavisor transaction-mode pooling
       # against HikariCP/JDBC prepared-statement caching; disable caching
       # here if it misbehaves under the pooler.
+      # Phase 3: Supavisor's transaction-mode pooler (port 6543) closes
+      # idle physical connections more aggressively than Hikari's default
+      # maxLifetime (30 min) expects, which OutboxRelay's once-a-second
+      # polling now surfaces as periodic connection has been closed
+      # warnings. Set below Supavisor's own timeout so Hikari recycles
+      # connections proactively instead of reactively.
+      max-lifetime: 30000
       data-source-properties:
         prepareThreshold: 0
         cachePrepStmts: false
@@ -42,6 +49,21 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 0
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+# Phase 3: TradePulse-specific settings, namespaced under "ledger" so they
+# read as our own domain config rather than a Spring Boot built-in.
+ledger:
+  market-data:
+    stream-name: market.ticks
+    consumer-group: cg:ledger-core
+  outbox:
+    stream-name: ledger.events
+    relay-interval-ms: 1000
 
 server:
   port: 8080

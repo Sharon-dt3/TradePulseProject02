@@ -1,0 +1,2 @@
+redis==5.0.8
+websocket-client==1.8.0

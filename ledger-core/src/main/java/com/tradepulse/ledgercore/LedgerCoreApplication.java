@@ -2,6 +2,7 @@ package com.tradepulse.ledgercore;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Phase 0 baseline entrypoint. Flyway runs the {@code accounts} migration on
@@ -12,8 +13,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Auth (JWKS verification), ownership scoping, orders, and every other
  * concern land in later phases per IMPLEMENTATION_PLAN.md — this class is
  * intentionally minimal.
+ *
+ * @EnableScheduling added in Phase 3 for OutboxRelay's @Scheduled polling
+ * of the outbox table.
  */
 @SpringBootApplication
+@EnableScheduling
 public class LedgerCoreApplication {
     public static void main(String[] args) {
         SpringApplication.run(LedgerCoreApplication.class, args);

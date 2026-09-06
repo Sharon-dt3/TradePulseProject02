@@ -38,6 +38,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
+        <!-- Phase 3: Redis Streams client for consuming market.ticks and
+             (Phase 6/7) relaying outbox events. Spring Data Redis's
+             StreamOperations gives consumer-group support (XGROUP/
+             XREADGROUP/XACK) through the same abstraction the rest of the
+             app already uses for JPA, rather than reaching for a raw
+             Lettuce/Jedis client directly. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
