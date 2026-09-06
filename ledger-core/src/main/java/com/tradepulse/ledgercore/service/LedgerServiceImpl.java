@@ -1,10 +1,12 @@
 package com.tradepulse.ledgercore.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,12 +26,16 @@ import com.tradepulse.ledgercore.repository.TradeRepository;
 @Service
 public class LedgerServiceImpl implements LedgerService {
 
+    private static final int COMMISSION_BPS_SCALE = 10_000;
+
     private final AccountRepository accountRepository;
     private final TradeRepository tradeRepository;
     private final JournalEntryRepository journalEntryRepository;
     private final JournalLineRepository journalLineRepository;
     private final AuditLogRepository auditLogRepository;
     private final OutboxRepository outboxRepository;
+    private final long commissionBps;
+    private final UUID houseAccountId;
 
     public LedgerServiceImpl(
             AccountRepository accountRepository,
@@ -37,7 +43,9 @@ public class LedgerServiceImpl implements LedgerService {
             JournalEntryRepository journalEntryRepository,
             JournalLineRepository journalLineRepository,
             AuditLogRepository auditLogRepository,
-            OutboxRepository outboxRepository
+            OutboxRepository outboxRepository,
+            @Value("${ledger.commission-bps}") long commissionBps,
+            @Value("${ledger.house-account-id}") UUID houseAccountId
     ) {
         this.accountRepository = accountRepository;
         this.tradeRepository = tradeRepository;
@@ -45,6 +53,8 @@ public class LedgerServiceImpl implements LedgerService {
         this.journalLineRepository = journalLineRepository;
         this.auditLogRepository = auditLogRepository;
         this.outboxRepository = outboxRepository;
+        this.commissionBps = commissionBps;
+        this.houseAccountId = houseAccountId;
     }
 
     /**
@@ -54,6 +64,13 @@ public class LedgerServiceImpl implements LedgerService {
      * its own transaction, so this is the only place these five concerns
      * can ever drift out of sync with each other - if any step below
      * fails, the whole trade never happened, not partially.
+     *
+     * Phase 6: a commission fee is computed on the notional and posted as
+     * its own balanced journal-line pair (trading account debited,
+     * house account credited via ledger.house-account-id /
+     * V14__house_fees_account.sql) alongside the pre-existing principal
+     * cash-movement line - see postFee's javadoc for why it's a separate
+     * pair rather than folded into the principal line.
      */
     @Override
     @Transactional
@@ -64,13 +81,12 @@ public class LedgerServiceImpl implements LedgerService {
         // account receives) - same sign convention as journal_lines.amount.
         BigDecimal notional = quantity.multiply(price);
         BigDecimal cashDelta = side == Trade.Side.BUY ? notional.negate() : notional;
+        BigDecimal fee = computeFee(notional);
 
-        // Existence check first: this is the cheapest way to fail fast on
-        // an unknown accountId, before constructing any of the other rows.
-        // Doesn't change correctness either way - @Transactional means a
-        // later failure would roll back everything already built - but
-        // this avoids wasted work on the common failure path.
-        int rowsUpdated = accountRepository.adjustCashBalance(accountId, cashDelta);
+        // Combined principal+fee delta applied in one UPDATE - see
+        // postFee's javadoc for why this is still recorded as two
+        // separate journal_lines rather than one merged line.
+        int rowsUpdated = accountRepository.adjustCashBalance(accountId, cashDelta.subtract(fee));
         if (rowsUpdated == 0) {
             throw AccountNotFoundException.forAccountId(accountId);
         }
@@ -83,6 +99,8 @@ public class LedgerServiceImpl implements LedgerService {
 
         JournalLine journalLine = new JournalLine(journalEntry.getId(), accountId, cashDelta);
         journalLineRepository.save(journalLine);
+
+        postFee(journalEntry.getId(), accountId, fee);
 
         AuditLog auditLog = new AuditLog(
                 actorUserId,
@@ -117,5 +135,55 @@ public class LedgerServiceImpl implements LedgerService {
         outboxRepository.save(outbox);
 
         return trade;
+    }
+
+    /**
+     * fee = notional x (commissionBps / 10_000), rounded HALF_UP to
+     * numeric(19,4) - standard rounding for a currency amount, and
+     * consistent with every other money value in this codebase already
+     * being numeric(19,4).
+     */
+    private BigDecimal computeFee(BigDecimal notional) {
+        return notional
+                .multiply(BigDecimal.valueOf(commissionBps))
+                .divide(BigDecimal.valueOf(COMMISSION_BPS_SCALE), 4, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Posts the fee as its own balanced journal-line pair - a -fee line
+     * on the trading account, a +fee line on the house account - under
+     * the SAME journal_entry_id as the trade's principal line, per
+     * JournalEntry's own javadoc ("one or more JournalLine rows" against
+     * one entry per trade).
+     *
+     * This is deliberately a separate pair rather than folding the fee
+     * into the principal line's amount: the principal line documents
+     * exactly the notional cash movement the trade itself caused,
+     * unchanged from Phase 3; the fee pair documents exactly what the
+     * fee did, and nothing else. Merging them into one number per
+     * account would make it impossible to later audit "how much of this
+     * trade's cash movement was the fee" from journal_lines alone.
+     *
+     * The trading account's actual cash_balance update already happened
+     * in postTrade (combined with the principal delta in one UPDATE);
+     * only the house account's cash_balance is updated here.
+     */
+    private void postFee(UUID journalEntryId, UUID accountId, BigDecimal fee) {
+        JournalLine feeDebit = new JournalLine(journalEntryId, accountId, fee.negate());
+        journalLineRepository.save(feeDebit);
+
+        int houseRowsUpdated = accountRepository.adjustCashBalance(houseAccountId, fee);
+        if (houseRowsUpdated == 0) {
+            // Not a bad request - this means ledger.house-account-id is
+            // misconfigured or V14__house_fees_account.sql never ran,
+            // either of which is an operational setup bug, not something
+            // a caller did wrong.
+            throw new IllegalStateException(
+                    "House fees account " + houseAccountId + " not found - "
+                            + "check ledger.house-account-id and V14__house_fees_account.sql");
+        }
+
+        JournalLine feeCredit = new JournalLine(journalEntryId, houseAccountId, fee);
+        journalLineRepository.save(feeCredit);
     }
 }

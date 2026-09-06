@@ -6,3 +6,4 @@ psycopg[binary]==3.2.10
 pydantic-settings==2.5.2
 # JWKS verification (Phase 1):
 pyjwt[crypto]==2.9.0
+redis==5.0.8

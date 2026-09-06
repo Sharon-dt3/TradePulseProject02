@@ -18,9 +18,10 @@ package com.tradepulse.ledgercore.domain;
  * Per BLUEPRINT.md §7 OD-2 (resolved: left open until v1 ships),
  * "TradeResult.rejection_reason" (this type) is NOT frozen-v1 — new
  * values can be added here without a version bump, which is exactly what
- * Phase 4's two values below are. This is also why the DB column has no
- * CHECK constraint enumerating values (see V12) — a CHECK would
- * effectively freeze it at the database layer while OD-2 was still open.
+ * Phase 4's two values and Phase 9's ACCOUNT_FROZEN are. This is also why
+ * the DB column has no CHECK constraint enumerating values (see V12) — a
+ * CHECK would effectively freeze it at the database layer while OD-2 was
+ * still open.
  */
 public enum RejectionReason {
     /** No tick has ever been observed for this symbol. */
@@ -41,5 +42,11 @@ public enum RejectionReason {
      * ledger.max-position-notional. Deliberately notional, not share
      * count — see ComplianceRules' javadoc for why.
      */
-    NOTIONAL_LIMIT_EXCEEDED
+    NOTIONAL_LIMIT_EXCEEDED,
+    /**
+     * accounts.frozen = true for this order's account. Checked once in
+     * OrderServiceImpl.resolveOrder before either order-type branch runs
+     * — freezing blocks every new order regardless of MARKET/LIMIT.
+     */
+    ACCOUNT_FROZEN
 }

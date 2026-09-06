@@ -1,5 +1,6 @@
 package com.tradepulse.ledgercore.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -8,12 +9,14 @@ import com.tradepulse.ledgercore.web.dto.OrderRequestDto;
 import com.tradepulse.ledgercore.web.dto.OrderResultDto;
 
 /**
- * Order placement, scoped to Phase 3: MARKET orders filled immediately
- * at the cached tick price, or rejected NO_MARKET/STALE_PRICE. Mirrors
- * AccountService's shape — the controller passes in the caller's
- * userId, not an account_id, so ownership resolution (jwt.sub ->
- * account) stays behind this one seam rather than trusting a
- * client-supplied account.
+ * Order placement and lifecycle. MARKET orders fill immediately at the
+ * cached tick price, or reject NO_MARKET/STALE_PRICE. LIMIT orders
+ * (Phase 8) fill immediately too if they already cross at placement,
+ * otherwise sit WORKING until handleTick or the expiry sweep resolves
+ * them. Mirrors AccountService's shape for placeOrder/listOrders — the
+ * controller passes in the caller's userId, not an account_id, so
+ * ownership resolution (jwt.sub -> account) stays behind this one seam
+ * rather than trusting a client-supplied account.
  */
 public interface OrderService {
 
@@ -31,4 +34,15 @@ public interface OrderService {
      * @throws AccountNotFoundException if userId has no account
      */
     List<OrderResultDto> listOrders(UUID userId);
+
+    /**
+     * Called once per tick (by MarketTickConsumer, after it updates
+     * PriceCache) for every WORKING LIMIT order on this symbol that now
+     * crosses tickPrice: fills it at tickPrice through the same
+     * compliance-then-fill path placement uses, or rejects it if a
+     * compliance check that passed at placement no longer does (e.g. the
+     * account's position moved since then). Has no caller-facing result —
+     * a tick isn't a request anyone is waiting on a response for.
+     */
+    void handleTick(String symbol, BigDecimal tickPrice);
 }

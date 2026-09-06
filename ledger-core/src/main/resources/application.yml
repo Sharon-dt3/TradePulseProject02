@@ -70,6 +70,28 @@ ledger:
   # merely-slow feed the same as a genuinely dead one.
   max-price-age-ms: 5000
   max-position-notional: ${LEDGER_MAX_POSITION_NOTIONAL:50000}
+  # Phase 6: commission rate in basis points (1 bps = 0.01%), applied to a
+  # fill's notional (quantity x price) to compute the fee. 10 bps = 0.10%.
+  # Env-overridable like max-position-notional, since a commission rate is
+  # the kind of business parameter that plausibly differs per deployment.
+  commission-bps: ${LEDGER_COMMISSION_BPS:10}
+  # Phase 6: the house account fees are credited to, seeded by
+  # V14__house_fees_account.sql. Hardcoded (not env-overridable) on
+  # purpose — this value and the migration's seeded row must always match
+  # exactly, so letting them drift apart via an env var would just create
+  # a way for the two to disagree.
+  house-account-id: a0000000-0000-4000-8000-000000000002
+  # Phase 8: how long a LIMIT order stays WORKING when the client
+  # doesn't supply its own expiresAt (OrderRequestDto.expiresAt is
+  # optional). The scheduled sweep (next step) marks anything past this
+  # EXPIRED. Env-overridable for the same reason commission-bps is.
+  limit-order-default-ttl-hours: ${LEDGER_LIMIT_ORDER_DEFAULT_TTL_HOURS:24}
+  # Phase 8: how often OrderExpirySweep checks for WORKING orders whose
+  # expires_at has passed. Minute-scale is plenty - unlike price ticks,
+  # an order's expiry is measured in hours (see the default TTL above),
+  # so a client won't notice a sweep running once a minute rather than
+  # once a second.
+  limit-order-expiry-sweep-interval-ms: ${LEDGER_LIMIT_ORDER_EXPIRY_SWEEP_INTERVAL_MS:60000}
   cors:
     allowed-origins: ${LEDGER_CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
