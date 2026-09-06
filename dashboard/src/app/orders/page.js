@@ -8,9 +8,10 @@ import { ledgerCoreFetch } from "@/lib/api/client";
 const POLL_INTERVAL_MS = 5000;
 
 /**
- * Lists the caller's orders, newest first, straight off GET /orders
- * (see ledger-core/API.md). Polls on an interval rather than opening a
- * stream — ticket-authenticated SSE is Phase 10's job, so this view
+ * Lists the caller's orders, newest first, straight off GET /orders, and
+ * lets them place a new MARKET order via POST /orders (see
+ * ledger-core/API.md for both). Polls on an interval rather than opening
+ * a stream — ticket-authenticated SSE is Phase 10's job, so this view
  * stays a plain REST read until that lands.
  */
 export default function OrdersPage() {
@@ -18,12 +19,29 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState(null);
 
+  const [symbol, setSymbol] = useState("");
+  const [side, setSide] = useState("BUY");
+  const [quantity, setQuantity] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [lastResult, setLastResult] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+
+  const loadOrders = async () => {
+    try {
+      const data = await ledgerCoreFetch("/orders");
+      setOrders(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
 
     let cancelled = false;
 
-    const load = async () => {
+    const poll = async () => {
       try {
         const data = await ledgerCoreFetch("/orders");
         if (!cancelled) {
@@ -35,14 +53,40 @@ export default function OrdersPage() {
       }
     };
 
-    load();
-    const intervalId = setInterval(load, POLL_INTERVAL_MS);
+    poll();
+    const intervalId = setInterval(poll, POLL_INTERVAL_MS);
 
     return () => {
       cancelled = true;
       clearInterval(intervalId);
     };
   }, [user]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitError(null);
+    setSubmitting(true);
+
+    try {
+      const result = await ledgerCoreFetch("/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbol: symbol.trim().toUpperCase(),
+          side,
+          orderType: "MARKET",
+          quantity: Number(quantity),
+        }),
+      });
+      setLastResult(result);
+      setQuantity("");
+      await loadOrders();
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (authLoading) return <p>Loading...</p>;
 
@@ -61,6 +105,54 @@ export default function OrdersPage() {
         <Link href="/">&larr; Back</Link>
       </p>
       <h1>Orders</h1>
+
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          marginBottom: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <input
+          value={symbol}
+          onChange={(e) => setSymbol(e.target.value)}
+          placeholder="Symbol (e.g. BTCUSD)"
+          required
+        />
+        <select value={side} onChange={(e) => setSide(e.target.value)}>
+          <option value="BUY">Buy</option>
+          <option value="SELL">Sell</option>
+        </select>
+        <input
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+          placeholder="Quantity"
+          type="number"
+          step="any"
+          min="0"
+          required
+        />
+        <button type="submit" disabled={submitting}>
+          {submitting ? "Placing..." : "Place order"}
+        </button>
+      </form>
+
+      {submitError && <p style={{ color: "red" }}>{submitError}</p>}
+
+      {lastResult && (
+        <p
+          style={{
+            color: lastResult.status === "FILLED" ? "green" : "#b8860b",
+          }}
+        >
+          {lastResult.status === "FILLED"
+            ? `Filled at ${lastResult.fillPrice}`
+            : `Rejected: ${lastResult.rejectionReason}`}
+        </p>
+      )}
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
