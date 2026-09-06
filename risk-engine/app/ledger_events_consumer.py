@@ -24,8 +24,23 @@ class LedgerEventsConsumer(StreamConsumer):
         payload = json.loads(fields["payload"])
         account_id = UUID(payload["accountId"])
 
+        snapshot_fields = None
         with SessionLocal() as session:
             with session.begin():
                 if not applied_events_repository.try_mark_applied(session, event_id):
                     return
-                recompute_for_account(session, account_id, settings.price_history_window)
+                snapshot_fields = recompute_for_account(
+                    session, account_id, settings.price_history_window
+                )
+
+        # Published only after the transaction above has committed, so a
+        # dashboard subscriber never sees a risk.updates event for a
+        # snapshot that could still roll back. Caveat: if this xadd itself
+        # raises, handle_record raises too and the record is redelivered
+        # per stream_consumer.py's at-least-once contract - but
+        # try_mark_applied will then see event_id as already applied and
+        # return early above, so the retry recomputes nothing and never
+        # republishes. Accepted for now: risk_snapshots (already
+        # committed) stays the source of truth; risk.updates is a
+        # best-effort live push, not authoritative.
+        self._redis.xadd(settings.risk_updates_stream, snapshot_fields)

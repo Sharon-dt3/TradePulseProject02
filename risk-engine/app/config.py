@@ -50,6 +50,7 @@ class Settings(BaseSettings):
 
     market_ticks_stream: str = "market.ticks"  # env: MARKET_TICKS_STREAM
     ledger_events_stream: str = "ledger.events"  # env: LEDGER_EVENTS_STREAM
+    risk_updates_stream: str = "risk.updates"  # env: RISK_UPDATES_STREAM
     risk_consumer_group: str = "cg:risk-engine"  # env: RISK_CONSUMER_GROUP
 
     price_history_window: int = 30  # env: PRICE_HISTORY_WINDOW

@@ -19,7 +19,7 @@ def recompute_for_account(
     session: Session,
     account_id: UUID,
     price_history_window: int,
-) -> None:
+) -> dict:
     positions = positions_repository.get_positions(session, account_id)
     cash = positions_repository.get_cash_balance(session, account_id)
     if cash is None:
@@ -58,3 +58,12 @@ def recompute_for_account(
         insufficient_history=insufficient_var or insufficient_sharpe,
         computed_at=now,
     )
+
+    return {
+        "accountId": str(account_id),
+        "var95": str(var_95),
+        "volatility": str(volatility),
+        "sharpe": str(sharpe),
+        "insufficientHistory": str(insufficient_var or insufficient_sharpe),
+        "computedAt": now.isoformat(),
+    }
