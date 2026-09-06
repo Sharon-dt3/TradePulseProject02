@@ -57,7 +57,7 @@ public class LedgerServiceImpl implements LedgerService {
      */
     @Override
     @Transactional
-    public Trade postTrade(UUID accountId, UUID actorUserId, String symbol, Trade.Side side,
+    public Trade postTrade(UUID orderId, UUID accountId, UUID actorUserId, String symbol, Trade.Side side,
                             BigDecimal quantity, BigDecimal price, OffsetDateTime executedAt) {
 
         // BUY debits cash (the account pays), SELL credits it (the
@@ -72,10 +72,10 @@ public class LedgerServiceImpl implements LedgerService {
         // this avoids wasted work on the common failure path.
         int rowsUpdated = accountRepository.adjustCashBalance(accountId, cashDelta);
         if (rowsUpdated == 0) {
-            throw new AccountNotFoundException(accountId);
+            throw AccountNotFoundException.forAccountId(accountId);
         }
 
-        Trade trade = new Trade(accountId, symbol, side, quantity, price, executedAt);
+        Trade trade = new Trade(orderId, accountId, symbol, side, quantity, price, executedAt);
         tradeRepository.save(trade);
 
         JournalEntry journalEntry = new JournalEntry(trade.getId(), "Trade settlement for " + symbol);
@@ -90,6 +90,7 @@ public class LedgerServiceImpl implements LedgerService {
                 "trade",
                 trade.getId(),
                 Map.of(
+                        "orderId", orderId.toString(),
                         "accountId", accountId.toString(),
                         "symbol", symbol,
                         "side", side.name(),
@@ -104,6 +105,7 @@ public class LedgerServiceImpl implements LedgerService {
                 trade.getId(),
                 "TradePosted",
                 Map.of(
+                        "orderId", orderId.toString(),
                         "accountId", accountId.toString(),
                         "symbol", symbol,
                         "side", side.name(),

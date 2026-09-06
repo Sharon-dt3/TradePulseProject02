@@ -64,6 +64,11 @@ ledger:
   outbox:
     stream-name: ledger.events
     relay-interval-ms: 1000
+  # OrderServiceImpl's MARKET fill staleness check (STALE_PRICE). Both
+  # tools/tick-producer scripts tick once a second per symbol, so 5x that
+  # interval tolerates one or two missed/delayed ticks without treating a
+  # merely-slow feed the same as a genuinely dead one.
+  max-price-age-ms: 5000
 
 server:
   port: 8080

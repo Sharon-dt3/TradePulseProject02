@@ -21,6 +21,10 @@ import jakarta.persistence.Table;
  * "assigned identifier" strategy and sends this object's id verbatim in
  * the INSERT, so the DB-side default never actually fires for
  * app-inserted rows.
+ *
+ * orderId is NOT NULL as of V11__orders.sql — every trade originates
+ * from an order (MARKET fills today, LIMIT from Phase 8), per
+ * BLUEPRINT.md §3 listing trades.order_id without "nullable".
  */
 @Entity
 @Table(name = "trades")
@@ -32,6 +36,9 @@ public class Trade {
 
     @Id
     private UUID id;
+
+    @Column(name = "order_id", nullable = false)
+    private UUID orderId;
 
     @Column(name = "account_id", nullable = false)
     private UUID accountId;
@@ -59,8 +66,9 @@ public class Trade {
         // required by JPA
     }
 
-    public Trade(UUID accountId, String symbol, Side side, BigDecimal quantity, BigDecimal price, OffsetDateTime executedAt) {
+    public Trade(UUID orderId, UUID accountId, String symbol, Side side, BigDecimal quantity, BigDecimal price, OffsetDateTime executedAt) {
         this.id = UUID.randomUUID();
+        this.orderId = orderId;
         this.accountId = accountId;
         this.symbol = symbol;
         this.side = side;
@@ -72,6 +80,10 @@ public class Trade {
 
     public UUID getId() {
         return id;
+    }
+
+    public UUID getOrderId() {
+        return orderId;
     }
 
     public UUID getAccountId() {
