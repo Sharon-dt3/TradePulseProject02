@@ -26,12 +26,15 @@ import com.tradepulse.ledgercore.repository.TradeRepository;
 import com.tradepulse.ledgercore.web.dto.OrderRequestDto;
 import com.tradepulse.ledgercore.web.dto.OrderResultDto;
 
+import java.math.BigDecimal;
+
 @Service
 public class OrderServiceImpl implements OrderService {
 
     private final AccountService accountService;
     private final PriceCache priceCache;
     private final LedgerService ledgerService;
+    private final ComplianceRules complianceRules;
     private final OrderRepository orderRepository;
     private final TradeRepository tradeRepository;
     private final AuditLogRepository auditLogRepository;
@@ -41,6 +44,7 @@ public class OrderServiceImpl implements OrderService {
             AccountService accountService,
             PriceCache priceCache,
             LedgerService ledgerService,
+            ComplianceRules complianceRules,
             OrderRepository orderRepository,
             TradeRepository tradeRepository,
             AuditLogRepository auditLogRepository,
@@ -49,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
         this.accountService = accountService;
         this.priceCache = priceCache;
         this.ledgerService = ledgerService;
+        this.complianceRules = complianceRules;
         this.orderRepository = orderRepository;
         this.tradeRepository = tradeRepository;
         this.auditLogRepository = auditLogRepository;
@@ -57,13 +62,19 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * One @Transactional method covering order creation, the price/
-     * staleness check, and either the fill (which delegates to
-     * LedgerService.postTrade, joining this same transaction per its own
-     * "never a separate transaction" rule) or the reject — so a crash
-     * partway through can never leave an order FILLED without a trade,
-     * or vice versa.
+     * staleness check, Phase 4's compliance check, and either the fill
+     * (which delegates to LedgerService.postTrade, joining this same
+     * transaction per its own "never a separate transaction" rule) or the
+     * reject — so a crash partway through can never leave an order FILLED
+     * without a trade, or vice versa.
      *
-     * Note on account state: Phase 3 does not check accounts.frozen here
+     * Compliance runs after the price check (a notional check needs a
+     * real reference price to mean anything) and before the fill (a
+     * rejected order must never reach LedgerService.postTrade) — see
+     * ComplianceRules' javadoc for the two checks themselves and why
+     * they're ordered the way they are.
+     *
+     * Note on account state: Phase 3/4 do not check accounts.frozen here
      * — "a frozen account rejects new orders" is Phase 9's own
      * verification checkpoint, not this phase's. Nothing here should be
      * read as an oversight if a frozen account can still place an order
@@ -88,6 +99,13 @@ public class OrderServiceImpl implements OrderService {
         long ageMs = System.currentTimeMillis() - price.tsMillis();
         if (ageMs > maxPriceAgeMs) {
             return reject(order, userId, RejectionReason.STALE_PRICE);
+        }
+
+        BigDecimal currentPosition = tradeRepository.currentPosition(account.getId(), request.symbol());
+        Optional<RejectionReason> violation = complianceRules.firstViolation(
+                account, request.side(), request.quantity(), currentPosition, price.price());
+        if (violation.isPresent()) {
+            return reject(order, userId, violation.get());
         }
 
         OffsetDateTime executedAt = OffsetDateTime.now();

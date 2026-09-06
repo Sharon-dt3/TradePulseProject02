@@ -69,6 +69,7 @@ ledger:
   # interval tolerates one or two missed/delayed ticks without treating a
   # merely-slow feed the same as a genuinely dead one.
   max-price-age-ms: 5000
+  max-position-notional: ${LEDGER_MAX_POSITION_NOTIONAL:50000}
   cors:
     allowed-origins: ${LEDGER_CORS_ALLOWED_ORIGINS:http://localhost:3000}
 

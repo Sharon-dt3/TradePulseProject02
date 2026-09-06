@@ -126,6 +126,8 @@ reserved for requests that couldn't be processed at all (see
 |---|---|
 | `NO_MARKET` | No tick has ever been observed for this symbol |
 | `STALE_PRICE` | A tick exists, but it's older than `ledger.max-price-age-ms` (default 5000ms) |
+| `INSUFFICIENT_POSITION` | A SELL would take a non-margin account's position below zero |
+| `NOTIONAL_LIMIT_EXCEEDED` | The order would increase the account's notional exposure in this symbol beyond `ledger.max-position-notional` (default $50,000) — only checked when the order *increases* exposure; de-risking trades are never blocked by this |
 
 `rejectionReason` is **not** declared frozen-v1 yet (BLUEPRINT.md §7
 OD-2 is still open) — later phases (e.g. Phase 4's

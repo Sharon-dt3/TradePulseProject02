@@ -15,17 +15,31 @@ package com.tradepulse.ledgercore.domain;
  * re-deriving it from audit_log's jsonb details, so it lives in the
  * domain package now rather than web.dto, and Order stores it directly.
  *
- * Per BLUEPRINT.md §7 OD-2, "TradeResult.rejection_reason" (this type)
- * is NOT declared frozen-v1 yet — that decision is still open, so Phase
- * 4 (INSUFFICIENT_POSITION, notional-limit) can add values here without
- * a version bump. This is also why the DB column has no CHECK constraint
- * enumerating values (see V12) - a CHECK would effectively freeze it at
- * the database layer while OD-2 is still open. Revisit this comment once
- * OD-2 is resolved.
+ * Per BLUEPRINT.md §7 OD-2 (resolved: left open until v1 ships),
+ * "TradeResult.rejection_reason" (this type) is NOT frozen-v1 — new
+ * values can be added here without a version bump, which is exactly what
+ * Phase 4's two values below are. This is also why the DB column has no
+ * CHECK constraint enumerating values (see V12) — a CHECK would
+ * effectively freeze it at the database layer while OD-2 was still open.
  */
 public enum RejectionReason {
     /** No tick has ever been observed for this symbol. */
     NO_MARKET,
     /** A tick exists for this symbol, but it's older than ledger.max-price-age-ms. */
-    STALE_PRICE
+    STALE_PRICE,
+    /**
+     * A SELL would take a non-margin account's position below zero.
+     * Margin-enabled accounts (accounts.margin_enabled = true) are exempt
+     * from this check — Phase 4 only enforces long-only for accounts that
+     * haven't opted into margin; margin trading itself isn't built yet
+     * (deferred to Phase 11).
+     */
+    INSUFFICIENT_POSITION,
+    /**
+     * The account's notional exposure in this symbol after the order
+     * fills (|positionAfter| x referencePrice) would exceed
+     * ledger.max-position-notional. Deliberately notional, not share
+     * count — see ComplianceRules' javadoc for why.
+     */
+    NOTIONAL_LIMIT_EXCEEDED
 }
