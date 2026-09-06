@@ -1,9 +1,12 @@
 package com.tradepulse.ledgercore.service;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,15 +15,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.tradepulse.ledgercore.domain.Account;
 import com.tradepulse.ledgercore.domain.AuditLog;
 import com.tradepulse.ledgercore.domain.Order;
+import com.tradepulse.ledgercore.domain.RejectionReason;
 import com.tradepulse.ledgercore.domain.Trade;
 import com.tradepulse.ledgercore.exception.AccountNotFoundException;
 import com.tradepulse.ledgercore.marketdata.PriceCache;
 import com.tradepulse.ledgercore.marketdata.PriceSnapshot;
 import com.tradepulse.ledgercore.repository.AuditLogRepository;
 import com.tradepulse.ledgercore.repository.OrderRepository;
+import com.tradepulse.ledgercore.repository.TradeRepository;
 import com.tradepulse.ledgercore.web.dto.OrderRequestDto;
 import com.tradepulse.ledgercore.web.dto.OrderResultDto;
-import com.tradepulse.ledgercore.web.dto.RejectionReason;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -29,6 +33,7 @@ public class OrderServiceImpl implements OrderService {
     private final PriceCache priceCache;
     private final LedgerService ledgerService;
     private final OrderRepository orderRepository;
+    private final TradeRepository tradeRepository;
     private final AuditLogRepository auditLogRepository;
     private final long maxPriceAgeMs;
 
@@ -37,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
             PriceCache priceCache,
             LedgerService ledgerService,
             OrderRepository orderRepository,
+            TradeRepository tradeRepository,
             AuditLogRepository auditLogRepository,
             @Value("${ledger.max-price-age-ms}") long maxPriceAgeMs
     ) {
@@ -44,6 +50,7 @@ public class OrderServiceImpl implements OrderService {
         this.priceCache = priceCache;
         this.ledgerService = ledgerService;
         this.orderRepository = orderRepository;
+        this.tradeRepository = tradeRepository;
         this.auditLogRepository = auditLogRepository;
         this.maxPriceAgeMs = maxPriceAgeMs;
     }
@@ -90,11 +97,11 @@ public class OrderServiceImpl implements OrderService {
         order.fill();
         orderRepository.save(order);
 
-        return OrderResultDto.filled(order, trade);
+        return OrderResultDto.from(order, trade);
     }
 
     private OrderResultDto reject(Order order, UUID actorUserId, RejectionReason reason) {
-        order.reject();
+        order.reject(reason);
         orderRepository.save(order);
 
         auditLogRepository.save(new AuditLog(
@@ -110,6 +117,37 @@ public class OrderServiceImpl implements OrderService {
                 )
         ));
 
-        return OrderResultDto.rejected(order, reason);
+        return OrderResultDto.from(order, null);
+    }
+
+    /**
+     * Every order the caller's account has ever placed, newest first.
+     * FILLED orders need their Trade for fillPrice/executedAt — fetched
+     * once for the whole list (findByOrderIdIn) rather than per order,
+     * so this stays one extra query regardless of how many orders come
+     * back. REJECTED orders need no such lookup: rejectionReason is
+     * read straight off the Order row (see RejectionReason's javadoc for
+     * why that's persisted now).
+     */
+    @Override
+    public List<OrderResultDto> listOrders(UUID userId) {
+        Account account = accountService.getAccountForUser(userId)
+                .orElseThrow(() -> AccountNotFoundException.forUserId(userId));
+
+        List<Order> orders = orderRepository.findByAccountIdOrderByCreatedAtDesc(account.getId());
+
+        List<UUID> filledOrderIds = orders.stream()
+                .filter(o -> o.getStatus() == Order.Status.FILLED)
+                .map(Order::getId)
+                .toList();
+
+        Map<UUID, Trade> tradeByOrderId = filledOrderIds.isEmpty()
+                ? Map.of()
+                : tradeRepository.findByOrderIdIn(filledOrderIds).stream()
+                        .collect(Collectors.toMap(Trade::getOrderId, Function.identity()));
+
+        return orders.stream()
+                .map(order -> OrderResultDto.from(order, tradeByOrderId.get(order.getId())))
+                .toList();
     }
 }

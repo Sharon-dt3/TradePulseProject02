@@ -5,18 +5,25 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.tradepulse.ledgercore.domain.Order;
+import com.tradepulse.ledgercore.domain.RejectionReason;
 import com.tradepulse.ledgercore.domain.Trade;
 
 /**
- * Response body for POST /orders — for both outcomes. A REJECTED order
- * is a successful response (201): the request was valid, the order was
- * just rejected by a market/business rule, not thrown as an
- * ApiException. See RejectionReason's javadoc for that distinction.
+ * Response body for both POST /orders (a single order just placed) and
+ * GET /orders (a list of past orders) — the same shape works for both,
+ * since Order now carries its own rejectionReason (see
+ * V12__orders_rejection_reason.sql) rather than that being something
+ * only the placing request ever knew.
  *
- * fillPrice/executedAt are populated only when status is FILLED;
- * rejectionReason only when status is REJECTED — never both at once,
- * enforced by construction (the two factories below are the only way to
- * build one of these).
+ * A REJECTED order is a successful response (201/200): the request was
+ * valid, the order was just rejected by a market/business rule, not
+ * thrown as an ApiException. See RejectionReason's javadoc for that
+ * distinction.
+ *
+ * fillPrice/executedAt come from the order's Trade and are null unless
+ * status is FILLED; rejectionReason is null unless status is REJECTED —
+ * from(order, trade) is the only way to build one of these, so those
+ * two states can't both be populated at once by construction.
  */
 public record OrderResultDto(
         UUID orderId,
@@ -29,17 +36,17 @@ public record OrderResultDto(
         BigDecimal fillPrice,
         OffsetDateTime executedAt
 ) {
-    public static OrderResultDto filled(Order order, Trade trade) {
+    /**
+     * @param trade the order's fill, or null if it has none (rejected,
+     *              or not yet resolved — the latter doesn't happen in
+     *              v1, but nothing here assumes otherwise)
+     */
+    public static OrderResultDto from(Order order, Trade trade) {
         return new OrderResultDto(
                 order.getId(), order.getSymbol(), order.getSide(), order.getOrderType(),
-                order.getQuantity(), order.getStatus(), null, trade.getPrice(), trade.getExecutedAt()
-        );
-    }
-
-    public static OrderResultDto rejected(Order order, RejectionReason reason) {
-        return new OrderResultDto(
-                order.getId(), order.getSymbol(), order.getSide(), order.getOrderType(),
-                order.getQuantity(), order.getStatus(), reason, null, null
+                order.getQuantity(), order.getStatus(), order.getRejectionReason(),
+                trade == null ? null : trade.getPrice(),
+                trade == null ? null : trade.getExecutedAt()
         );
     }
 }

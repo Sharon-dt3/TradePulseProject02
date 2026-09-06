@@ -1,5 +1,6 @@
 package com.tradepulse.ledgercore.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.tradepulse.ledgercore.exception.AccountNotFoundException;
@@ -23,4 +24,11 @@ public interface OrderService {
      * @throws AccountNotFoundException if userId has no account
      */
     OrderResultDto placeOrder(UUID userId, OrderRequestDto request);
+
+    /**
+     * Every order the caller's account has ever placed, newest first.
+     *
+     * @throws AccountNotFoundException if userId has no account
+     */
+    List<OrderResultDto> listOrders(UUID userId);
 }

@@ -12,9 +12,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Maps to the "orders" table created in V11__orders.sql. App-created,
- * like Trade — see Trade's javadoc for why that means a public
- * constructor and an app-generated id rather than the column's
+ * Maps to the "orders" table created in V11__orders.sql
+ * (rejection_reason added in V12__orders_rejection_reason.sql).
+ * App-created, like Trade — see Trade's javadoc for why that means a
+ * public constructor and an app-generated id rather than the column's
  * gen_random_uuid() default.
  *
  * Status changes go through fill()/reject() rather than a public setter,
@@ -72,6 +73,10 @@ public class Order {
     @Column(name = "status", nullable = false)
     private Status status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rejection_reason")
+    private RejectionReason rejectionReason;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -101,13 +106,11 @@ public class Order {
         this.status = Status.FILLED;
     }
 
-    /**
-     * NEW -> REJECTED, e.g. NO_MARKET/STALE_PRICE — see RejectionReason
-     * for why the specific reason isn't stored on this entity.
-     */
-    public void reject() {
+    /** NEW -> REJECTED, recording why (see RejectionReason). */
+    public void reject(RejectionReason reason) {
         requireStatus(Status.NEW);
         this.status = Status.REJECTED;
+        this.rejectionReason = reason;
     }
 
     private void requireStatus(Status expected) {
@@ -143,6 +146,10 @@ public class Order {
 
     public Status getStatus() {
         return status;
+    }
+
+    public RejectionReason getRejectionReason() {
+        return rejectionReason;
     }
 
     public OffsetDateTime getCreatedAt() {
