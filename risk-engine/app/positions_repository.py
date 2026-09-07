@@ -43,3 +43,27 @@ def get_positions(session: Session, account_id: UUID) -> Dict[str, Decimal]:
         {"account_id": str(account_id)},
     ).all()
     return {row.symbol: row.position for row in rows}
+
+
+def get_net_positions_all_accounts(session: Session) -> Dict[str, Decimal]:
+    """Net quantity per symbol across every account (BUY positive, SELL
+    negative), netted the same way get_positions above nets one
+    account. Phase 17: this is a deliberate net-not-gross exposure
+    simplification, consistent with risk_calculator's own documented
+    zero-correlation simplification - two accounts holding opposite
+    positions in the same symbol partially or fully offset here, which
+    is correct for firm-level market-risk exposure (offsetting
+    positions really do reduce net price risk) even though it
+    understates gross/counterparty exposure, a different metric this
+    doesn't compute."""
+    rows = session.execute(
+        text(
+            """
+            SELECT symbol, SUM(CASE WHEN side = 'BUY' THEN quantity ELSE -quantity END) AS position
+            FROM trades
+            GROUP BY symbol
+            HAVING SUM(CASE WHEN side = 'BUY' THEN quantity ELSE -quantity END) != 0
+            """
+        )
+    ).all()
+    return {row.symbol: row.position for row in rows}

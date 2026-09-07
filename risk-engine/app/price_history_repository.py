@@ -9,7 +9,7 @@ inherently a DESC-ordered concept.
 """
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -42,3 +42,21 @@ def get_recent_prices(session: Session, symbol: str, limit: int) -> List[Tuple[d
         {"symbol": symbol, "limit": limit},
     ).all()
     return [(row.observed_at, row.price) for row in rows]
+
+
+def get_latest_prices(session: Session) -> Dict[str, Decimal]:
+    """The single newest price_history row per symbol, across every
+    symbol that has one - via DISTINCT ON (symbol) ordered by
+    observed_at DESC. Phase 17: used to value firm-wide net positions
+    by symbol; unlike get_recent_prices above, there's no return-series
+    ordering concern here since only the latest point is used."""
+    rows = session.execute(
+        text(
+            """
+            SELECT DISTINCT ON (symbol) symbol, price
+            FROM price_history
+            ORDER BY symbol, observed_at DESC
+            """
+        )
+    ).all()
+    return {row.symbol: row.price for row in rows}

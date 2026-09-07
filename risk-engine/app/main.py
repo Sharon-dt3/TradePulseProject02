@@ -19,6 +19,8 @@ from app.ledger_events_consumer import LedgerEventsConsumer
 from app.market_tick_consumer import MarketTickConsumer
 from app.risk_service import get_latest_snapshot_for_user
 from app.risk_explanation import build_explanation
+from app.risk_aggregate_service import get_firm_wide_aggregate
+from app.permission_service import require_permission, roles_from_user
 
 app = FastAPI(title="risk-engine")
 
@@ -67,3 +69,15 @@ def get_my_risk_snapshot(
         snapshot["var_95"], snapshot["volatility"], snapshot["sharpe"], snapshot["insufficient_history"]
     )
     return snapshot
+
+
+@app.get("/risk/aggregate")
+def get_aggregate_risk(
+    user: dict = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Phase 17: firm-wide risk for Risk Manager (and Admin). Gated by
+    risk.aggregate.read, already seeded to both roles back in V3 - no
+    new migration needed, just the read path neither role had before."""
+    require_permission(session, roles_from_user(user), "risk.aggregate.read")
+    return get_firm_wide_aggregate(session)

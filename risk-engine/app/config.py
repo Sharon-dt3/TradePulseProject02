@@ -57,6 +57,20 @@ class Settings(BaseSettings):
 
     risk_free_rate_annual: Decimal  # env: RISK_FREE_RATE_ANNUAL — required, no default
 
+    # Phase 17: GET /risk/aggregate's high-risk account flag. An
+    # account is high-risk when its one-day 95% VaR exceeds this
+    # fraction of its own portfolio_value — sized relative to the
+    # account rather than an absolute dollar figure, so a $10k account
+    # and a $10M account are held to the same proportional standard
+    # rather than the dollar threshold unfairly flagging only large
+    # accounts (or missing genuinely risky small ones). 0.10 (10%) is
+    # a deliberate starting policy choice, not a derived figure —
+    # documented here the same way risk_free_rate_annual's own
+    # "no silent default" reasoning is documented, except this one
+    # does default, since it's a tunable risk policy rather than a
+    # market-rate input that would be actively wrong left unset.
+    risk_high_risk_var_threshold_pct: Decimal = Decimal("0.10")  # env: RISK_HIGH_RISK_VAR_THRESHOLD_PCT
+
     @field_validator("price_history_window")
     @classmethod
     def enforce_statistically_meaningful_window(cls, value: int) -> int:
