@@ -649,10 +649,18 @@ for accounts that aren't their own.
 **Depends on:** everything above that a grant/role change would otherwise
 require manual SQL for.
 **Task checklist:**
-- [ ] User listing and role assignment/removal (`user.manag`,
-      `role.manage` — not yet even seeded in `role_permissions`) —
+- [x] User listing and role assignment/removal (`user.read.all`,
+      `role.manage`, seeded in V27) — `GET /admin/users` (with each
+      user's roles), `POST/DELETE /admin/users/{userId}/roles/{role}` —
       replacing every manual `INSERT INTO user_roles` this whole session
-      has relied on.
+      has relied on. Live-verified: list with correct per-user roles,
+      assign (201), duplicate assign (409 ROLE_ALREADY_ASSIGNED), invalid
+      role (400 INVALID_ROLE), remove (204), remove-again
+      (404 ROLE_NOT_ASSIGNED). `removeRole` needed `@Transactional` for
+      its derived `deleteByUserIdAndRole` call — without it, Spring's
+      find-then-`remove()` had no active EntityManager transaction and
+      threw `TransactionRequiredException` (500) on every delete.
+      (commit 1eae853)
 - [ ] `account_grants` create/revoke (Delegated Viewer, Support) and
       `audit_engagements` create (Auditor) — Admin is the issuer per the
       spec ("Admin manages Support access, creates account grants"); the
@@ -664,7 +672,7 @@ require manual SQL for.
 reason and expiry, and revoke a grant — all three via API calls, zero
 manual SQL, in the same session that will then use Phase 15's test to
 confirm the grant actually works and actually expires.
-**Status:** not started.
+**Status:** in progress — item 1 of 3 complete (commit 1eae853).
 
 ---
 
