@@ -6,12 +6,6 @@ import { PriceTrendChart, TRACKED_MARKET_SYMBOLS } from "@/components/features/M
 import { formatMoney } from "@/lib/format";
 
 const STALE_AFTER_MS = 30000;
-const RANGE_OPTIONS = [
-  { value: "5m", label: "5m", duration: 5 * 60 * 1000 },
-  { value: "1h", label: "1h", duration: 60 * 60 * 1000 },
-  { value: "1d", label: "1d", duration: 24 * 60 * 60 * 1000 },
-  { value: "session", label: "Session", duration: null },
-];
 const WATCHLIST_STORAGE_KEY = "tradepulse-market-pulse-watchlist";
 const ALERT_STORAGE_KEY = "tradepulse-market-pulse-alerts";
 
@@ -43,13 +37,6 @@ function quoteStatus(quote) {
   if (quote.simulated) return { label: "Simulated", tone: "warning" };
   if (quote.ageMs > STALE_AFTER_MS) return { label: "Stale", tone: "warning" };
   return { label: "Live", tone: "success" };
-}
-
-function filteredPoints(points, range) {
-  if (range === "session") return points;
-  const option = RANGE_OPTIONS.find((item) => item.value === range);
-  const cutoff = Date.now() - option.duration;
-  return points.filter((point) => point.ts >= cutoff);
 }
 
 function movementFor(points, quote) {
@@ -140,7 +127,6 @@ function MarketPulseCard({
  * current application has no server-side watchlist or notification API.
  */
 export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTrade }) {
-  const [range, setRange] = useState("5m");
   const [selectedSymbol, setSelectedSymbol] = useState(null);
   const [watchlist, setWatchlist] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -205,7 +191,7 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
   }, [alerts, quoteBySymbol]);
 
   const selectedQuote = selectedSymbol ? quoteBySymbol.get(selectedSymbol) : null;
-  const selectedPoints = selectedSymbol ? filteredPoints(history[selectedSymbol] ?? [], range) : [];
+  const selectedPoints = selectedSymbol ? history[selectedSymbol] ?? [] : [];
   const selectedStatus = quoteStatus(selectedQuote);
   const selectedMovement = movementFor(selectedPoints, selectedQuote);
   const values = selectedPoints.map((point) => Number(point.price));
@@ -243,7 +229,7 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
 
   const comparisonQuotes = comparison.map((symbol) => quoteBySymbol.get(symbol));
   const comparisonMovements = comparison.map((symbol, index) =>
-    movementFor(filteredPoints(history[symbol] ?? [], range), comparisonQuotes[index]),
+    movementFor(history[symbol] ?? [], comparisonQuotes[index]),
   );
 
   return (
@@ -256,18 +242,9 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex rounded-lg border border-line bg-bg p-1" role="group" aria-label="Observed price range">
-          {RANGE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setRange(option.value)}
-              className={`rounded-md px-2.5 py-1.5 text-xs font-semibold ${range === option.value ? "bg-surface text-fg shadow-sm" : "text-muted hover:text-fg"}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <p className="text-xs text-muted">
+          Price trends reflect quotes observed while this tab remains open.
+        </p>
         <div className="flex flex-wrap gap-2">
           <Badge tone={isUsMarketOpen() ? "success" : "neutral"}>
             {isUsMarketOpen() ? "U.S. session open" : "U.S. session closed"}
@@ -289,7 +266,7 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
                 key={symbol}
                 symbol={symbol}
                 quote={quoteBySymbol.get(symbol)}
-                points={filteredPoints(history[symbol] ?? [], range)}
+                points={history[symbol] ?? []}
                 pinned={pinnedIndex >= 0}
                 canMoveUp={pinnedIndex > 0}
                 canMoveDown={pinnedIndex >= 0 && pinnedIndex < watchlist.length - 1}
@@ -305,7 +282,7 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
       <div className="mt-4 rounded-lg border border-line bg-bg p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">Compare observed movement</p>
-          <span className="text-xs text-muted">{range === "session" ? "Current session" : `${range} observed window`}</span>
+          <span className="text-xs text-muted">All quotes observed in this tab</span>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {comparison.map((symbol, index) => (
