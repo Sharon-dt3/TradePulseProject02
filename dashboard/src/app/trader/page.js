@@ -17,6 +17,7 @@ import MarketPricesTable from "@/components/features/MarketPricesTable";
 import MarketPriceSparklines from "@/components/features/MarketPriceSparklines";
 import StatementForm from "@/components/features/StatementForm";
 import RiskPanel from "@/components/features/RiskPanel";
+import PortfolioCommandCenter from "@/components/features/PortfolioCommandCenter";
 import TabBar from "@/components/ui/TabBar";
 import { ledgerCoreFetch } from "@/lib/api/client";
 import { formatMoney } from "@/lib/format";
@@ -167,6 +168,14 @@ function TraderWorkspace() {
     });
   };
 
+  const handlePositionDetails = (symbol) => {
+    setOrderSymbol(symbol);
+    setTab("Positions");
+    requestAnimationFrame(() => {
+      document.getElementById("activity-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   const displayedOrders =
     showWorkingOrders && orders ? orders.filter((order) => order.status === "WORKING") : orders;
 
@@ -191,6 +200,18 @@ function TraderWorkspace() {
         onReviewOpenOrders={handleReviewOpenOrders}
         onSelectTab={handleSelectTab}
       />
+
+      <div className="mb-4">
+        <PortfolioCommandCenter
+          account={account}
+          positions={positions ?? []}
+          prices={marketMonitorPrices}
+          history={marketMonitorHistory}
+          orders={orders ?? []}
+          trades={trades ?? []}
+          onTrade={handleTradeSymbol}
+        />
+      </div>
 
       <div className="mb-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div>
@@ -272,10 +293,17 @@ function TraderWorkspace() {
               orders={displayedOrders}
               loading={orders === null}
               onCancel={handleCancel}
+              onTrade={handleTradeSymbol}
             />
           )}
           {tab === "Positions" && (
-            <PositionsTable positions={positions} prices={marketPrices ?? []} loading={positions === null} />
+            <PositionsTable
+              positions={positions}
+              prices={marketMonitorPrices}
+              loading={positions === null}
+              onSelectPosition={handlePositionDetails}
+              onTrade={handleTradeSymbol}
+            />
           )}
           {tab === "Trades" && <TradesTable trades={trades} loading={trades === null} />}
           {tab === "Transactions" && <TransactionsTable />}
