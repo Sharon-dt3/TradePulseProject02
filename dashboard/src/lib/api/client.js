@@ -51,7 +51,8 @@ async function baseFetch(baseUrl, path, options = {}) {
     return null;
   }
 
-  return response.json();
+  const responseText = await response.text();
+  return responseText ? JSON.parse(responseText) : null;
 }
 
 /**
