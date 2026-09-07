@@ -142,6 +142,60 @@ function buildTradeImpact(trades, history) {
   return { lastTrade, before, after, varPct };
 }
 
+/** Builds a concise, evidence-based narrative from values already displayed
+ * in this panel. It describes observed changes and monitoring considerations;
+ * it does not predict returns or direct a trader to buy or sell a symbol. */
+function buildRiskOutlook({ history, concentration, tradeImpact }) {
+  if (history.length < 2) {
+    return {
+      headline: "Building a baseline",
+      summary:
+        "A single usable risk observation is available. As new market and trade events create snapshots, this section will compare changes in downside risk, volatility, and risk-adjusted returns.",
+      focus:
+        "Use the current figures as a starting point and revisit this view after the next completed risk recalculation.",
+    };
+  }
+
+  const previous = history[history.length - 2];
+  const current = history[history.length - 1];
+  const varDirection =
+    current.var95 > previous.var95
+      ? "increased"
+      : current.var95 < previous.var95
+        ? "decreased"
+        : "held steady";
+  const volatilityDirection =
+    current.volatility > previous.volatility
+      ? "widened"
+      : current.volatility < previous.volatility
+        ? "narrowed"
+        : "held steady";
+  const sharpeDirection =
+    current.sharpe > previous.sharpe
+      ? "improved"
+      : current.sharpe < previous.sharpe
+        ? "weakened"
+        : "held steady";
+  const riskRising = varDirection === "increased" || volatilityDirection === "widened";
+  const concentrationNote =
+    concentration?.symbolCount === 1
+      ? "Your priced holdings are currently concentrated in one symbol, so its price movement has an outsized effect on the portfolio."
+      : concentration?.largestWeight >= 0.7
+        ? `Your largest priced holding represents ${formatPct(concentration.largestWeight)} of holdings, making that symbol the primary concentration to monitor.`
+        : concentration
+          ? `Exposure is spread across ${concentration.symbolCount} priced holding${concentration.symbolCount === 1 ? "" : "s"}, with no single holding above 70%.`
+          : "Current concentration cannot be calculated until positions receive live quotes.";
+  const tradeNote = tradeImpact
+    ? `The latest observed execution was ${tradeImpact.lastTrade.side} ${formatNumber(tradeImpact.lastTrade.quantity)} ${tradeImpact.lastTrade.symbol}. The following snapshots show VaR ${tradeImpact.varPct === null ? "updated after that trade" : `${tradeImpact.varPct >= 0 ? "rose" : "fell"} ${Math.abs(tradeImpact.varPct).toFixed(1)}%`}—an observed sequence, not a claim that the trade alone caused the move.`
+    : "No recent execution can be directly paired with the recorded risk movement yet.";
+
+  return {
+    headline: riskRising ? "Risk needs closer monitoring" : "Risk trend is stable or improving",
+    summary: `Since the previous recorded snapshot, estimated downside risk ${varDirection}, portfolio swings ${volatilityDirection}, and risk-adjusted returns ${sharpeDirection}.`,
+    focus: `${concentrationNote} ${tradeNote}`,
+  };
+}
+
 /** positions/prices: same shape the trader page already passes to
  * PositionsTable - {symbol, quantity}[] and {symbol, price}[]. trades:
  * same shape passed to TradesTable - used only to attribute the most
@@ -151,6 +205,10 @@ export default function RiskAnalysisPanel({ positions, prices, trades }) {
   const concentration = computeConcentration(positions, prices);
   const prevPoint = history.length >= 2 ? history[history.length - 2] : null;
   const currPoint = history.length >= 1 ? history[history.length - 1] : null;
+  const tradeImpact = buildTradeImpact(trades, history);
+  const outlook = latest
+    ? buildRiskOutlook({ history, concentration, tradeImpact })
+    : null;
 
   return (
     <Card title="Risk analysis" action={<LiveDot connected={liveConnected} />}>
@@ -184,21 +242,25 @@ export default function RiskAnalysisPanel({ positions, prices, trades }) {
             ))}
           </div>
 
-          {(() => {
-            const impact = buildTradeImpact(trades, history);
-            if (!impact) return null;
-            const { lastTrade, varPct } = impact;
-            return (
-              <div className="rounded-lg border border-info/25 bg-info-bg p-3 text-sm text-info">
-                <span className="font-medium">Last trade impact: </span>
-                Your most recent fill — {lastTrade.side} {formatNumber(lastTrade.quantity)} {lastTrade.symbol} at{" "}
-                {formatMoney(lastTrade.price)} ({formatDate(lastTrade.executedAt)}) —
-                {varPct !== null
-                  ? ` was followed by VaR moving ${varPct >= 0 ? "up" : "down"} ${Math.abs(varPct).toFixed(1)}%.`
-                  : " occurred around the risk snapshots shown above."}
-              </div>
-            );
-          })()}
+          {outlook && (
+            <section
+              aria-labelledby="risk-outlook-heading"
+              className="rounded-xl border border-primary/20 bg-primary-soft p-4"
+            >
+              <p
+                id="risk-outlook-heading"
+                className="text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-primary"
+              >
+                Risk outlook
+              </p>
+              <h4 className="mt-2 text-base font-semibold text-fg">{outlook.headline}</h4>
+              <p className="mt-2 text-sm leading-relaxed text-fg">{outlook.summary}</p>
+              <p className="mt-3 text-sm leading-relaxed text-muted">{outlook.focus}</p>
+              <p className="mt-3 text-xs leading-relaxed text-muted">
+                This is an informational interpretation of recorded account data, not investment advice or a performance forecast.
+              </p>
+            </section>
+          )}
 
           {concentration && (
             <div className="rounded-lg border border-line p-3">
@@ -213,6 +275,14 @@ export default function RiskAnalysisPanel({ positions, prices, trades }) {
                   HHI (0–1, higher = more concentrated) · largest position is {formatPct(concentration.largestWeight)} of holdings
                 </span>
               </div>
+            </div>
+          )}
+
+          {tradeImpact && (
+            <div className="rounded-lg border border-info/25 bg-info-bg p-3 text-sm text-info">
+              <span className="font-medium">Last trade context: </span>
+              {tradeImpact.lastTrade.side} {formatNumber(tradeImpact.lastTrade.quantity)} {tradeImpact.lastTrade.symbol} at{" "}
+              {formatMoney(tradeImpact.lastTrade.price)} ({formatDate(tradeImpact.lastTrade.executedAt)}).
             </div>
           )}
 
