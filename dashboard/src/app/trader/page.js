@@ -17,7 +17,6 @@ import MarketPricesTable from "@/components/features/MarketPricesTable";
 import MarketPriceSparklines from "@/components/features/MarketPriceSparklines";
 import StatementForm from "@/components/features/StatementForm";
 import RiskPanel from "@/components/features/RiskPanel";
-import RiskAnalysisPanel from "@/components/features/RiskAnalysisPanel";
 import TabBar from "@/components/ui/TabBar";
 import { ledgerCoreFetch } from "@/lib/api/client";
 import { formatMoney } from "@/lib/format";
@@ -237,10 +236,6 @@ function TraderWorkspace() {
 
       <div className="mt-4">
         <MarketPriceSparklines latest={marketPrices} history={marketHistory} />
-      </div>
-
-      <div className="mt-4">
-        <RiskAnalysisPanel positions={positions} prices={marketPrices} trades={trades} />
       </div>
     </div>
   );
