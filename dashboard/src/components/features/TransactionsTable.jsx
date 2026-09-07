@@ -16,7 +16,7 @@ export default function TransactionsTable() {
     <DataTable
       loading={rows === null}
       rows={rows}
-      rowKey="journalEntryId"
+      rowKey="lineId"
       emptyMessage="No transactions yet."
       columns={[
         { key: "createdAt", label: "Date", sortable: true, render: (r) => formatDate(r.createdAt) },

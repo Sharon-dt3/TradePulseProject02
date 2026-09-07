@@ -14,8 +14,14 @@ import com.tradepulse.ledgercore.domain.JournalLine;
  * JournalEntry.forTrade/forAdjustment) folded in. This is the
  * underlying journal itself - a trade with a fee shows up as two lines
  * here, not folded into one row the way GET /trades represents a fill.
+ *
+ * lineId is the JournalLine's own id - added after the dashboard's
+ * DataTable hit a real React key collision using journalEntryId alone:
+ * a trade-with-fee's two lines share one journalEntryId by design (same
+ * parent entry), so that field was never unique per row. lineId is.
  */
 public record TransactionDto(
+        UUID lineId,
         UUID journalEntryId,
         UUID tradeId,
         UUID adjustmentId,
@@ -25,7 +31,7 @@ public record TransactionDto(
 ) {
     public static TransactionDto from(JournalLine line, JournalEntry entry) {
         return new TransactionDto(
-                entry.getId(), entry.getTradeId(), entry.getAdjustmentId(),
+                line.getId(), entry.getId(), entry.getTradeId(), entry.getAdjustmentId(),
                 entry.getDescription(), line.getAmount(), line.getCreatedAt()
         );
     }
