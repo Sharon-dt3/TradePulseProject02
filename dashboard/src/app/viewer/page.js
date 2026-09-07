@@ -114,7 +114,7 @@ function ViewerWorkspace() {
 
 export default function ViewerPage() {
   return (
-    <RequireRole roles={["viewer"]}>
+    <RequireRole roles={["viewer", "delegated_viewer"]}>
       <ViewerWorkspace />
     </RequireRole>
   );

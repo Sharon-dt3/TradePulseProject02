@@ -6,7 +6,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { formatNumber, formatMoney, formatDate, rejectionMessage, statusTone } from "@/lib/format";
 
-const CANCELLABLE_STATUSES = new Set(["WORKING", "PENDING"]);
+const CANCELLABLE_STATUSES = new Set(["WORKING"]); // OrderServiceImpl.cancelOrder only allows WORKING (Order.Status has no "PENDING")
 
 /** onCancel is optional - only Trader's own-order view passes it. */
 export default function OrdersTable({ orders, loading, onCancel }) {
