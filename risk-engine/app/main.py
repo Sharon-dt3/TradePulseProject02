@@ -18,12 +18,19 @@ from app.config import settings
 from app.db import get_session
 from app.ledger_events_consumer import LedgerEventsConsumer
 from app.market_tick_consumer import MarketTickConsumer
-from app.risk_service import get_latest_snapshot_for_user
+from app.risk_service import get_latest_snapshot_for_user, get_risk_history_for_user
 from app.risk_explanation import build_explanation
 from app.risk_aggregate_service import get_firm_wide_aggregate
 from app.permission_service import require_permission, roles_from_user
 
-app = FastAPI(title="risk-engine")
+app = FastAPI(
+    title="TradePulse Risk Engine",
+    description="Authenticated account and firm-wide risk analysis for TradePulse.",
+    version="1.0.0",
+    openapi_tags=[
+        {"name": "risk", "description": "Account-scoped and firm-wide risk analysis."},
+    ],
+)
 
 # Phase 20: GET /risk/me and GET /risk/aggregate are now called directly
 # from the dashboard's browser context (previously nothing hit risk-engine
@@ -83,6 +90,36 @@ def get_my_risk_snapshot(
         snapshot["var_95"], snapshot["volatility"], snapshot["sharpe"], snapshot["insufficient_history"]
     )
     return snapshot
+
+
+@app.get(
+    "/risk/me/history",
+    tags=["risk"],
+    operation_id="getMyRiskHistory",
+    summary="Get recorded account risk trends",
+    description=(
+        "Returns the authenticated user's recorded portfolio-value trend, "
+        "changes from the prior stored snapshot, and recent executed trades."
+    ),
+)
+# PUBLIC_INTERFACE
+def get_my_risk_history(
+    user: dict = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Return the caller's recorded risk trend and recent execution context.
+
+    Args:
+        user: Verified JWT claims for the authenticated caller.
+        session: Database session used for ownership-scoped reads.
+
+    Returns:
+        A historical risk summary, or HTTP 404 when no risk snapshot exists.
+    """
+    history = get_risk_history_for_user(session, UUID(user["sub"]))
+    if history is None:
+        raise HTTPException(status_code=404, detail="No risk history found")
+    return history
 
 
 @app.get("/risk/aggregate")
