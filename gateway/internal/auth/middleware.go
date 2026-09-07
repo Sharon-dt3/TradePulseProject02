@@ -17,6 +17,12 @@ type contextKey string
 
 const userIDContextKey contextKey = "userID"
 
+// accountIDContextKey holds the account ID embedded in an SSE
+// ticket (auth.TicketValidator) - never set by the JWT Verifier
+// above, since a Bearer-authenticated request has no notion of
+// "the account this connection is scoped to".
+const accountIDContextKey contextKey = "accountID"
+
 // Verifier wraps a JWKS cache and the expected issuer. It mirrors
 // ledger-core's SecurityConfig and risk-engine's get_current_user — same
 // rule (verify signature, expiry, issuer, audience), this language's
@@ -82,5 +88,14 @@ func (v *Verifier) Middleware(next http.Handler) http.Handler {
 // only ever set after Middleware has already verified the token.
 func UserIDFromContext(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(userIDContextKey).(string)
+	return id, ok
+}
+
+// AccountIDFromContext reads the account ID an SSE ticket carried -
+// only set for ticket-authenticated connections. The bool is false
+// when the connected user has no trading account of their own (an
+// admin/compliance-only login), not on any error.
+func AccountIDFromContext(ctx context.Context) (string, bool) {
+	id, ok := ctx.Value(accountIDContextKey).(string)
 	return id, ok
 }

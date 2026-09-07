@@ -2,12 +2,22 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/redis/go-redis/v9"
 )
 
 const ticketKeyPrefix = "sse:ticket:"
+
+// ticketPayload mirrors ledger-core's StreamTicketService.TicketPayload -
+// the JSON shape stored under a ticket's key. accountID is a pointer so a
+// JSON null (the connected user has no trading account of their own)
+// decodes to nil, kept distinguishable from a real, oddly-empty string.
+type ticketPayload struct {
+	UserID    string  `json:"userId"`
+	AccountID *string `json:"accountId"`
+}
 
 // TicketValidator gates the SSE endpoint on a short-lived, single-use
 // ticket ledger-core minted (StreamTicketService), instead of a JWT -
@@ -30,6 +40,12 @@ func NewTicketValidator(redisAddr string) *TicketValidator {
 // delete happen as one Redis operation, so a ticket used twice
 // concurrently can still only ever succeed once: the second caller's
 // GetDel simply finds nothing, the same as an expired one.
+//
+// Cross-cutting integration check step 10: the stored value is now a
+// JSON payload carrying accountID alongside userID, not a bare string
+// - risk.updates events key off accountId, and this is how a
+// ticket-authenticated SSE connection learns which account it's
+// scoped to without gateway ever touching Postgres itself.
 func (t *TicketValidator) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ticket := r.URL.Query().Get("ticket")
@@ -38,7 +54,7 @@ func (t *TicketValidator) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		userID, err := t.redisClient.GetDel(r.Context(), ticketKeyPrefix+ticket).Result()
+		raw, err := t.redisClient.GetDel(r.Context(), ticketKeyPrefix+ticket).Result()
 		if err != nil {
 			// redis.Nil means the key never existed, already expired,
 			// or was already consumed by an earlier request - all
@@ -49,7 +65,16 @@ func (t *TicketValidator) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userIDContextKey, userID)
+		var payload ticketPayload
+		if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+			http.Error(w, `{"detail":"Invalid or expired ticket"}`, http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), userIDContextKey, payload.UserID)
+		if payload.AccountID != nil {
+			ctx = context.WithValue(ctx, accountIDContextKey, *payload.AccountID)
+		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

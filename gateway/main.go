@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/redis/go-redis/v9"
+
 	"github.com/Sharon-dt3/TradePulseProject02/gateway/internal/auth"
 	"github.com/Sharon-dt3/TradePulseProject02/gateway/internal/config"
 	"github.com/Sharon-dt3/TradePulseProject02/gateway/internal/sse"
@@ -49,7 +51,16 @@ func main() {
 	// still requires Access-Control-Allow-Origin on the response before
 	// it will let the dashboard's JS read it.
 	ticketValidator := auth.NewTicketValidator(cfg.RedisAddr)
-	sseHandler := ticketValidator.Middleware(http.HandlerFunc(sse.Handler))
+
+	// Cross-cutting integration check step 10: a second Redis client,
+	// separate from TicketValidator's - that one only ever does one-shot
+	// GETDELs, while this one holds long-lived blocking XREAD calls for
+	// as long as each SSE connection stays open. Sharing one client
+	// between those two very different access patterns isn't worth the
+	// coupling it would create.
+	streamRedisClient := redis.NewClient(&redis.Options{Addr: cfg.RedisAddr})
+	streamer := sse.NewStreamer(streamRedisClient, cfg.RiskUpdatesStream)
+	sseHandler := ticketValidator.Middleware(http.HandlerFunc(streamer.Handle))
 	mux.Handle("/sse", corsMiddleware(cfg.AllowedOrigin, sseHandler))
 
 	log.Printf("gateway listening on :%s", cfg.Port)

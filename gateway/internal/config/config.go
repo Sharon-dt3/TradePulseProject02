@@ -10,11 +10,12 @@ import (
 // risk-engine already verify against (BLUEPRINT.md §4) — all three
 // services trust the same Supabase Auth instance.
 type Config struct {
-	Port          string
-	JWKSURL       string
-	JWTIssuer     string
-	RedisAddr     string
-	AllowedOrigin string
+	Port              string
+	JWKSURL           string
+	JWTIssuer         string
+	RedisAddr         string
+	AllowedOrigin     string
+	RiskUpdatesStream string
 }
 
 // Load reads required environment variables, failing fast with a clear
@@ -55,11 +56,21 @@ func Load() (Config, error) {
 		allowedOrigin = "http://localhost:3000"
 	}
 
+	// Cross-cutting integration check step 9/10: same stream name
+	// risk-engine's RISK_UPDATES_STREAM setting defaults to - the two
+	// services must agree on this, since risk-engine publishes and
+	// gateway subscribes to the very same Redis stream.
+	riskUpdatesStream := os.Getenv("RISK_UPDATES_STREAM")
+	if riskUpdatesStream == "" {
+		riskUpdatesStream = "risk.updates"
+	}
+
 	return Config{
-		Port:          port,
-		JWKSURL:       jwksURL,
-		JWTIssuer:     issuer,
-		RedisAddr:     redisHost + ":" + redisPort,
-		AllowedOrigin: allowedOrigin,
+		Port:              port,
+		JWKSURL:           jwksURL,
+		JWTIssuer:         issuer,
+		RedisAddr:         redisHost + ":" + redisPort,
+		AllowedOrigin:     allowedOrigin,
+		RiskUpdatesStream: riskUpdatesStream,
 	}, nil
 }
