@@ -18,6 +18,9 @@ public class PortfolioServiceImpl implements PortfolioService {
     private static final String TRADES_READ_OWN_PERMISSION = "trades.read.own";
     private static final String POSITIONS_READ_GRANTED_PERMISSION = "positions.read.granted";
     private static final String TRADES_READ_GRANTED_PERMISSION = "trades.read.granted";
+    /** Phase 14 item 3. Already seeded to compliance+admin in V3, previously dormant. */
+    private static final String POSITIONS_READ_ANY_PERMISSION = "positions.read.any";
+    private static final String TRADES_READ_ANY_PERMISSION = "trades.read.any";
 
     private final AccountService accountService;
     private final TradeRepository tradeRepository;
@@ -45,7 +48,8 @@ public class PortfolioServiceImpl implements PortfolioService {
     @Override
     public List<PositionDto> listPositionsForAccount(List<String> roles, UUID callerId, UUID accountId) {
         Account account = accountAccessService.resolveReadableAccount(
-                roles, callerId, accountId, POSITIONS_READ_OWN_PERMISSION, POSITIONS_READ_GRANTED_PERMISSION);
+                roles, callerId, accountId,
+                POSITIONS_READ_OWN_PERMISSION, POSITIONS_READ_GRANTED_PERMISSION, POSITIONS_READ_ANY_PERMISSION);
         return positionsForAccountId(account.getId());
     }
 
@@ -68,7 +72,8 @@ public class PortfolioServiceImpl implements PortfolioService {
     @Override
     public List<TradeResultDto> listTradesForAccount(List<String> roles, UUID callerId, UUID accountId) {
         Account account = accountAccessService.resolveReadableAccount(
-                roles, callerId, accountId, TRADES_READ_OWN_PERMISSION, TRADES_READ_GRANTED_PERMISSION);
+                roles, callerId, accountId,
+                TRADES_READ_OWN_PERMISSION, TRADES_READ_GRANTED_PERMISSION, TRADES_READ_ANY_PERMISSION);
         return tradesForAccountId(account.getId());
     }
 

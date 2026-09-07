@@ -62,9 +62,36 @@ public class AccountAccessService {
     public Account resolveReadableAccount(
             List<String> roles, UUID callerId, UUID accountId,
             String ownPermission, String grantedPermission) {
+        return resolveReadableAccount(roles, callerId, accountId, ownPermission, grantedPermission, null);
+    }
+
+    /**
+     * Phase 14 item 3: a third tier on top of own/granted - "any",
+     * unconditional visibility for a role that holds anyPermission, no
+     * ownership check and no account_grants row required at all. This is
+     * Compliance's shape (and, incidentally, already Admin's for
+     * positions via the dormant positions.read.any seeded in V3): full
+     * read access across every account, not scoped to one relationship.
+     * anyPermission is checked first and, when held, short-circuits the
+     * own/granted resolution entirely - a Compliance caller reading an
+     * account they don't own and have no grant for still succeeds here,
+     * where the 5-arg overload would have thrown AccountNotFoundException.
+     *
+     * @param anyPermission if non-null and the caller's roles hold it,
+     *                      grants access to accountId unconditionally;
+     *                      pass null to get the original own/granted-only
+     *                      behavior (what the 5-arg overload does)
+     */
+    public Account resolveReadableAccount(
+            List<String> roles, UUID callerId, UUID accountId,
+            String ownPermission, String grantedPermission, String anyPermission) {
 
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> AccountNotFoundException.forAccountId(accountId));
+
+        if (anyPermission != null && permissionService.hasPermission(roles, anyPermission)) {
+            return account;
+        }
 
         if (account.getUserId().equals(callerId)) {
             permissionService.requirePermission(roles, ownPermission);

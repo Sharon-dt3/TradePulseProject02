@@ -559,14 +559,49 @@ one.
 
 **Depends on:** Phase 12/13's read patterns.
 **Task checklist:**
-- [ ] `POST /accounts/{accountId}/freeze` and `/unfreeze`
+- [x] `POST /accounts/{accountId}/freeze` and `/unfreeze`
       (`accounts.freeze`, already seeded but unused by any endpoint).
-- [ ] Confirm (with a real order attempt) a frozen account rejects new
+      New `Account.freeze()`/`unfreeze()` domain methods, a new
+      `AccountFreezeService` (reuses AccountRepository.findById, no
+      ownership check - any account, freeze or unfreeze, mandatory
+      `reason`, audit-logged as ACCOUNT_FROZEN/ACCOUNT_UNFROZEN
+      regardless of whether the flag actually changed). No new
+      migration - accounts.freeze was already seeded to
+      compliance+admin. Live-verified: freeze -> frozen:true on
+      read, blank reason -> 400, unknown account -> 404, unfreeze ->
+      frozen:false on read. (commit d2a62bd)
+- [x] Confirm (with a real order attempt) a frozen account rejects new
       orders while Compliance can still read it in full — the "frozen
-      ≠ invisible" rule from the spec.
-- [ ] Seed and wire `trade.read.all` / `order.read.all` for compliance
-      (currently only `positions.read.any` exists; trades/orders across
-      the whole system aren't compliance-readable at all yet).
+      ≠ invisible" rule from the spec. Verification only - the
+      rejection logic (OrderServiceImpl.resolveOrder,
+      RejectionReason.ACCOUNT_FROZEN) already existed from Phase 9 and
+      needed no changes. Live-verified: froze testtrader's own account
+      (compliance role), placed a MARKET order as the same user -
+      rejected with ACCOUNT_FROZEN (still HTTP 201, rejection is a
+      successful-request outcome per RejectionReason's contract);
+      unfroze, replayed the identical order - it proceeded past the
+      freeze check (came back NO_MARKET instead, an unrelated
+      rejection since no live tick existed for the symbol at test
+      time), confirming freeze itself - not something else - was the
+      blocker.
+- [x] Seed and wire an "any"-tier read for compliance across
+      account/positions/trades/orders (plan originally said
+      `trade.read.all`/`order.read.all`; built as `trades.read.any`/
+      `orders.read.any`/`account.read.any` instead, matching the
+      plural-resource + scope-suffix convention already established by
+      `*.read.own`/`*.read.granted` and by the existing dormant
+      `positions.read.any`). `AccountAccessService.resolveReadableAccount`
+      gained a 6-arg overload taking an optional anyPermission, checked
+      first and short-circuiting the own/granted resolution entirely when
+      held - wired into AccountServiceImpl, PortfolioServiceImpl
+      (positions + trades), OrderServiceImpl. New migration
+      V29__compliance_any_read_permissions.sql seeds account.read.any/
+      trades.read.any/orders.read.any to compliance; positions.read.any
+      already existed (V3) and just needed wiring. Live-verified: all
+      four endpoints (account, positions, trades, orders) return 200 for
+      an account the compliance caller neither owns nor holds a grant
+      for - before this item, the same calls threw ACCOUNT_NOT_FOUND
+      (404).
 - [ ] Compliance-scoped risk read (`risk.read.all` or reuse an existing
       permission — decide and document which, same as V7's account-read
       permission-reuse decision).

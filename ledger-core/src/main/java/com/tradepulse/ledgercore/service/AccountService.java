@@ -33,19 +33,22 @@ public interface AccountService {
     Optional<Account> getMyAccount(List<String> roles, UUID userId);
 
     /**
-     * Resolves accountId for granted (or, incidentally, self) access:
-     * ownership plus {@code account.read.own}, or a live account_grants
-     * row plus {@code account.read.granted} - re-checked fresh on every
-     * call via AccountAccessService, never cached. Unlike getMyAccount,
-     * this throws rather than returning Optional, matching the
-     * exception-based convention the other granted-read methods in this
-     * phase use (OrderService, PortfolioService).
+     * Resolves accountId for own, granted, or any access: ownership plus
+     * {@code account.read.own}; a live account_grants row plus
+     * {@code account.read.granted}; or (Phase 14 item 3) unconditional
+     * access for a caller whose roles hold {@code account.read.any}
+     * (Compliance) - no ownership or grant needed for that last tier.
+     * Re-checked fresh on every call via AccountAccessService, never
+     * cached. Unlike getMyAccount, this throws rather than returning
+     * Optional, matching the exception-based convention the other
+     * granted-read methods in this phase use (OrderService,
+     * PortfolioService).
      *
      * @throws AccountNotFoundException if accountId doesn't exist, or
      *                                    exists but the caller neither
-     *                                    owns it nor holds a valid grant
-     *                                    for it (the two cases are
-     *                                    indistinguishable on purpose)
+     *                                    owns it, holds a valid grant
+     *                                    for it, nor holds
+     *                                    account.read.any
      */
     Account getAccount(List<String> roles, UUID callerId, UUID accountId);
 }

@@ -42,6 +42,8 @@ public class OrderServiceImpl implements OrderService {
     private static final String ORDER_READ_PERMISSION = "orders.read.own";
     private static final String ORDER_CANCEL_PERMISSION = "orders.cancel.own";
     private static final String ORDER_READ_GRANTED_PERMISSION = "orders.read.granted";
+    /** Phase 14 item 3. */
+    private static final String ORDER_READ_ANY_PERMISSION = "orders.read.any";
 
     private final AccountService accountService;
     private final AccountRepository accountRepository;
@@ -363,7 +365,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<OrderResultDto> listOrdersForAccount(List<String> roles, UUID callerId, UUID accountId) {
         Account account = accountAccessService.resolveReadableAccount(
-                roles, callerId, accountId, ORDER_READ_PERMISSION, ORDER_READ_GRANTED_PERMISSION);
+                roles, callerId, accountId,
+                ORDER_READ_PERMISSION, ORDER_READ_GRANTED_PERMISSION, ORDER_READ_ANY_PERMISSION);
         return buildOrderResults(account.getId());
     }
 

@@ -13,6 +13,7 @@ public class AccountServiceImpl implements AccountService {
 
     private static final String ACCOUNT_READ_PERMISSION = "account.read.own";
     private static final String ACCOUNT_READ_GRANTED_PERMISSION = "account.read.granted";
+    private static final String ACCOUNT_READ_ANY_PERMISSION = "account.read.any";
 
     private final AccountRepository accountRepository;
     private final PermissionService permissionService;
@@ -39,6 +40,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Account getAccount(List<String> roles, UUID callerId, UUID accountId) {
         return accountAccessService.resolveReadableAccount(
-                roles, callerId, accountId, ACCOUNT_READ_PERMISSION, ACCOUNT_READ_GRANTED_PERMISSION);
+                roles, callerId, accountId,
+                ACCOUNT_READ_PERMISSION, ACCOUNT_READ_GRANTED_PERMISSION, ACCOUNT_READ_ANY_PERMISSION);
     }
 }
