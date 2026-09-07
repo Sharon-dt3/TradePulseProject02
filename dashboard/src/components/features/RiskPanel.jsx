@@ -190,7 +190,7 @@ function DetailedRiskMetrics({ analysis, history }) {
     <div className="space-y-3">
       {analysis.price_data_stale && (
         <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-          Stale market data: {analysis.stale_symbols.join(", ")}. Risk estimates may
+          Delayed market data: {analysis.stale_symbols.join(", ")}. Risk estimates may
           not reflect their latest prices.
         </p>
       )}
@@ -201,7 +201,7 @@ function DetailedRiskMetrics({ analysis, history }) {
             <span aria-hidden="true" className="text-base transition-transform group-open:rotate-45">+</span>
           </summary>
           <p className="mt-2 border-t border-line pt-2 leading-relaxed">
-            Each risk calculation uses the latest persisted quote for every holding. “Fresh” means the quote is within its asset-class threshold; equity quotes outside U.S. market hours are marked market closed instead of stale.
+            Each risk calculation uses the latest persisted quote for every holding. “Fresh” means the quote is within its asset-class threshold; equity quotes outside U.S. market hours are marked market closed rather than requiring an intraday update.
           </p>
           <ul className="mt-2 space-y-1">
             {quoteFreshness.map((quote) => (
@@ -213,7 +213,7 @@ function DetailedRiskMetrics({ analysis, history }) {
                   ? "market closed — using the latest regular-session quote"
                   : quote.status === "missing"
                     ? "no persisted quote is available"
-                    : `stale (${quote.age_seconds}s old; ${quote.stale_after_seconds}s threshold)`}
+                    : `delayed (${quote.age_seconds}s old; ${quote.stale_after_seconds}s threshold)`}
               </li>
             ))}
           </ul>
