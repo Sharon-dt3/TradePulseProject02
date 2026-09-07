@@ -9,7 +9,38 @@ import { rejectionMessage, formatMoney } from "@/lib/format";
 
 const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "TSLA", "BTCUSD"];
 
-export default function OrderForm({ onSubmit, prices }) {
+/** A directional (not numeric) pre-trade risk hint, computed client-side
+ * from positions already on screen - deliberately no fabricated VaR
+ * number here, since that needs risk-engine's real variance data. This
+ * only says which way risk would move, in plain language. */
+function riskHint(side, symbol, positions, prices) {
+  if (!positions || !prices || positions.length === 0) return null;
+  const priced = positions
+    .map((p) => {
+      const quote = prices.find((r) => r.symbol === p.symbol);
+      return quote ? { symbol: p.symbol, value: Number(p.quantity) * Number(quote.price) } : null;
+    })
+    .filter(Boolean);
+  const total = priced.reduce((sum, p) => sum + p.value, 0);
+  if (total <= 0) return null;
+
+  const holding = priced.find((p) => p.symbol === symbol);
+  const currentWeight = holding ? holding.value / total : 0;
+  const isLargest = holding && holding.value === Math.max(...priced.map((p) => p.value));
+
+  if (side === "BUY" && priced.length === 1 && holding) {
+    return "This is already your only holding — buying more increases concentration risk rather than diversifying it.";
+  }
+  if (side === "BUY" && isLargest && currentWeight >= 0.5) {
+    return `${symbol} is already your largest position (${(currentWeight * 100).toFixed(0)}% of holdings) — buying more increases concentration risk.`;
+  }
+  if (side === "SELL" && holding && currentWeight >= 0.5) {
+    return `Selling reduces exposure to ${symbol}, your largest position — this would lower concentration risk.`;
+  }
+  return null;
+}
+
+export default function OrderForm({ onSubmit, prices, positions }) {
   const [symbol, setSymbol] = useState("");
   const [side, setSide] = useState("BUY");
   const [orderType, setOrderType] = useState("MARKET");
@@ -97,6 +128,10 @@ export default function OrderForm({ onSubmit, prices }) {
           Market orders execute at the available market price and the final execution price can differ from this estimate. Fees, taxes, and settlement effects are not included.
         </p>
       </div>
+
+      {symbol && riskHint(side, symbol, positions, prices) && (
+        <p className="text-xs text-info">{riskHint(side, symbol, positions, prices)}</p>
+      )}
 
       <Alert tone="danger" onDismiss={() => setError(null)}>{error}</Alert>
       {result && <Alert tone={result.status === "FILLED" ? "success" : "warning"}>{result.status === "FILLED" ? `Order filled at ${formatMoney(result.fillPrice)}.` : `${result.status}${result.rejectionReason ? `: ${rejectionMessage(result.rejectionReason)}` : ""}`}</Alert>}
