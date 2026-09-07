@@ -216,6 +216,7 @@ function TraderWorkspace() {
         <Card
           title="Market pulse"
           action={<span className="text-xs text-muted">interactive quote workspace</span>}
+          className="market-pulse-panel"
         >
           <MarketPulse
             prices={marketMonitorPrices}

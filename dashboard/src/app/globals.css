@@ -94,6 +94,34 @@ a {
   --color-bg: #f3eeeb;
 }
 
+/* Gives the live market monitor a stronger visual anchor within the trader workspace. */
+.market-pulse-panel {
+  border-color: #b77b88;
+  background: linear-gradient(145deg, #f2dfe2 0%, #ead1d6 100%);
+  box-shadow: 0 2px 6px rgba(92, 30, 48, 0.1), 0 14px 32px rgba(92, 30, 48, 0.12);
+}
+
+.market-pulse-panel > div {
+  color: #351923;
+}
+
+.market-pulse-panel article,
+.market-pulse-panel > div > div.rounded-lg {
+  border-color: #c38f9a;
+  background: #fff8f7;
+}
+
+.market-pulse-panel select,
+.market-pulse-panel input,
+.market-pulse-panel button:not(.bg-primary) {
+  border-color: #c38f9a;
+}
+
+.market-pulse-panel article:hover {
+  border-color: #8f3349;
+  box-shadow: 0 8px 20px rgba(92, 30, 48, 0.12);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
