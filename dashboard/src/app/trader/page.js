@@ -25,7 +25,7 @@ import { useMarketPriceHistory } from "@/lib/useMarketPriceHistory";
 const TABS = ["Orders", "Positions", "Trades", "Transactions"];
 const POLL_INTERVAL_MS = 5000;
 
-function TodaySummary({ account, orders, positions, prices, onSelectTab }) {
+function TodaySummary({ account, orders, positions, prices, onReviewOpenOrders, onSelectTab }) {
   if (!account || orders === null) {
     return (
       <section aria-label="Today's account summary" className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -50,7 +50,7 @@ function TodaySummary({ account, orders, positions, prices, onSelectTab }) {
   const items = [
     { label: "Portfolio value", value: formatMoney(cash + holdingsValue), detail: "Cash + quoted holdings" },
     { label: "Cash available", value: formatMoney(cash), detail: cash < 0 ? "Review buying power" : "Ready for supported orders", tone: cash < 0 ? "danger" : undefined },
-    { label: "Open orders", value: openOrders.toLocaleString(), detail: openOrders ? "Review active instructions" : "No active instructions", action: () => onSelectTab("Orders") },
+    { label: "Open orders", value: openOrders.toLocaleString(), detail: openOrders ? "Review active instructions" : "No active instructions", action: onReviewOpenOrders },
     { label: "Live quotes", value: quotedSymbols.toLocaleString(), detail: quotedSymbols ? "Symbols available to explore" : "Waiting for market data", action: undefined },
   ];
 
@@ -89,6 +89,7 @@ function TraderWorkspace() {
   const [positions, setPositions] = useState(null);
   const [trades, setTrades] = useState(null);
   const [tab, setTab] = useState("Orders");
+  const [showWorkingOrders, setShowWorkingOrders] = useState(false);
   const [error, setError] = useState(null);
   const { latest: marketPrices, history: marketHistory } = useMarketPriceHistory();
 
@@ -125,6 +126,19 @@ function TraderWorkspace() {
     await loadOrders();
   };
 
+  const handleReviewOpenOrders = () => {
+    setShowWorkingOrders(true);
+    setTab("Orders");
+  };
+
+  const handleSelectTab = (nextTab) => {
+    setShowWorkingOrders(false);
+    setTab(nextTab);
+  };
+
+  const displayedOrders =
+    showWorkingOrders && orders ? orders.filter((order) => order.status === "WORKING") : orders;
+
   return (
     <div>
       <PageHeader
@@ -143,7 +157,8 @@ function TraderWorkspace() {
         orders={orders}
         positions={positions}
         prices={marketPrices}
-        onSelectTab={setTab}
+        onReviewOpenOrders={handleReviewOpenOrders}
+        onSelectTab={handleSelectTab}
       />
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -159,10 +174,10 @@ function TraderWorkspace() {
             <a href="#place-order" className="block rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-fg transition-opacity hover:opacity-90">
               Buy or sell a supported symbol
             </a>
-            <button type="button" onClick={() => setTab("Orders")} className="block w-full rounded-lg border border-line px-4 py-3 text-left text-sm font-medium text-fg transition-colors hover:bg-primary-soft">
+            <button type="button" onClick={handleReviewOpenOrders} className="block w-full rounded-lg border border-line px-4 py-3 text-left text-sm font-medium text-fg transition-colors hover:bg-primary-soft">
               Review open orders
             </button>
-            <button type="button" onClick={() => setTab("Positions")} className="block w-full rounded-lg border border-line px-4 py-3 text-left text-sm font-medium text-fg transition-colors hover:bg-primary-soft">
+            <button type="button" onClick={() => handleSelectTab("Positions")} className="block w-full rounded-lg border border-line px-4 py-3 text-left text-sm font-medium text-fg transition-colors hover:bg-primary-soft">
               View holdings
             </button>
           </div>
@@ -197,8 +212,14 @@ function TraderWorkspace() {
       </div>
 
       <Card>
-        <TabBar tabs={TABS} active={tab} onChange={setTab} />
-        {tab === "Orders" && <OrdersTable orders={orders} loading={orders === null} onCancel={handleCancel} />}
+        <TabBar tabs={TABS} active={tab} onChange={handleSelectTab} />
+        {tab === "Orders" && (
+          <OrdersTable
+            orders={displayedOrders}
+            loading={orders === null}
+            onCancel={handleCancel}
+          />
+        )}
         {tab === "Positions" && (
           <PositionsTable positions={positions} prices={marketPrices ?? []} loading={positions === null} />
         )}
