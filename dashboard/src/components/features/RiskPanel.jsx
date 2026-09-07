@@ -161,69 +161,69 @@ function DetailedRiskMetrics({ analysis }) {
         </div>
       )}
 
-      <div className="rounded-lg bg-primary-soft/45 px-3 py-2">
-        <p className="text-xs text-muted">One-period 95% VaR</p>
-        <p className="font-serif-display tabular-nums text-lg font-semibold text-fg">
-          {formatMoney(analysis.var_95)}
-          {varPercent !== null && (
-            <span className="ml-2 text-sm font-medium text-muted">
-              / {formatPct(varPercent)}
-            </span>
-          )}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-bg px-3 py-2">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-lg bg-primary-soft/45 px-3 py-2.5">
+          <p className="text-xs text-muted">One-period 95% VaR</p>
+          <p className="mt-1 font-serif-display tabular-nums text-lg font-semibold text-fg">
+            {formatMoney(analysis.var_95)}
+            {varPercent !== null && (
+              <span className="ml-2 text-sm font-medium text-muted">
+                / {formatPct(varPercent)}
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="rounded-lg bg-bg px-3 py-2.5">
           <p className="text-xs text-muted">Historical VaR</p>
           <p className="mt-1 font-semibold tabular-nums text-fg">
             {formatMoney(analysis.historical_var_95)}
           </p>
         </div>
-        <div className="rounded-lg bg-bg px-3 py-2">
+        <div className="rounded-lg bg-bg px-3 py-2.5">
           <p className="text-xs text-muted">Expected shortfall</p>
           <p className="mt-1 font-semibold tabular-nums text-fg">
             {formatMoney(analysis.expected_shortfall_95)}
           </p>
         </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <span className="text-muted">Volatility</span>
-        <span className="font-semibold tabular-nums text-fg">
-          {formatPct(analysis.volatility)}
-        </span>
-      </div>
-
-      {analysis.largest_position && (
-        <div
-          className={`rounded-lg px-3 py-2 text-sm ${
-            analysis.concentration_warning
-              ? "bg-warning/10 text-warning"
-              : "bg-bg text-fg"
-          }`}
-        >
-          <span className="font-medium">{analysis.largest_position}</span> is{" "}
-          {formatPct(analysis.concentration_pct)} of portfolio value.
-          {analysis.concentration_warning && " This exceeds the concentration warning threshold."}
+        <div className="rounded-lg bg-bg px-3 py-2.5">
+          <p className="text-xs text-muted">Volatility</p>
+          <p className="mt-1 font-semibold tabular-nums text-fg">
+            {formatPct(analysis.volatility)}
+          </p>
         </div>
-      )}
+      </div>
 
-      <div className="border-t border-line pt-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
-          Position risk contribution
-        </p>
-        <div className="mt-2 space-y-2">
-          {analysis.positions.slice(0, 4).map((position) => (
-            <div key={position.symbol} className="flex items-center justify-between gap-3 text-xs">
-              <span className="min-w-0 truncate text-fg">
-                {position.symbol} · {formatPct(position.weight)}
-              </span>
-              <span className="shrink-0 tabular-nums text-muted">
-                {formatMoney(position.component_var_95)}
-              </span>
-            </div>
-          ))}
+      <div className="grid gap-3 border-t border-line pt-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,1fr)]">
+        {analysis.largest_position && (
+          <div
+            className={`rounded-lg px-3 py-2 text-sm ${
+              analysis.concentration_warning
+                ? "bg-warning/10 text-warning"
+                : "bg-bg text-fg"
+            }`}
+          >
+            <span className="font-medium">{analysis.largest_position}</span> is{" "}
+            {formatPct(analysis.concentration_pct)} of portfolio value.
+            {analysis.concentration_warning && " This exceeds the concentration warning threshold."}
+          </div>
+        )}
+
+        <div className="rounded-lg bg-bg px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
+            Position risk contribution
+          </p>
+          <div className="mt-2 grid gap-x-4 gap-y-2 sm:grid-cols-2">
+            {analysis.positions.slice(0, 4).map((position) => (
+              <div key={position.symbol} className="flex items-center justify-between gap-3 text-xs">
+                <span className="min-w-0 truncate text-fg">
+                  {position.symbol} · {formatPct(position.weight)}
+                </span>
+                <span className="shrink-0 tabular-nums text-muted">
+                  {formatMoney(position.component_var_95)}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -309,7 +309,6 @@ export default function RiskPanel() {
     <Card
       title="Live risk analysis"
       action={<LiveDot connected={liveConnected} />}
-      className="h-full"
     >
       {notFound && (
         <p className="text-sm text-muted">

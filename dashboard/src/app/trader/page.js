@@ -201,22 +201,29 @@ function TraderWorkspace() {
         onSelectTab={handleSelectTab}
       />
 
-      <div className="mb-4">
-        <PortfolioCommandCenter
-          account={account}
-          positions={positions ?? []}
-          prices={marketMonitorPrices}
-          history={marketMonitorHistory}
-          orders={orders ?? []}
-          trades={trades ?? []}
-          onTrade={handleTradeSymbol}
-        />
+      <div className="mb-4 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div>
+          <PortfolioCommandCenter
+            account={account}
+            positions={positions ?? []}
+            prices={marketMonitorPrices}
+            history={marketMonitorHistory}
+            orders={orders ?? []}
+            trades={trades ?? []}
+            onTrade={handleTradeSymbol}
+          />
+        </div>
+        <aside className="grid gap-4" aria-label="Account and risk summary">
+          <AccountSummaryCard
+            account={account}
+            positions={positions ?? []}
+            prices={marketPrices ?? []}
+            loading
+          />
+        </aside>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div>
-          <AccountSummaryCard account={account} positions={positions ?? []} prices={marketPrices ?? []} loading />
-        </div>
+      <div className="mb-4">
         <RiskPanel />
       </div>
 
