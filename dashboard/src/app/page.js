@@ -54,7 +54,7 @@ export default function Home() {
             T
           </span>
           <div>
-            <p className="text-xl font-bold tracking-tight text-white">TradePulse</p>
+            <p className="text-xl font-bold tracking-tight text-[#741b32]">TradePulse</p>
             <p className="text-[0.63rem] font-bold uppercase tracking-[0.15em] text-[#8190aa]">Trading terminal</p>
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function Home() {
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-fg">T</span>
-              <span className="text-lg font-bold text-white">TradePulse</span>
+              <span className="text-lg font-bold text-[#741b32]">TradePulse</span>
             </div>
           </div>
 
