@@ -498,7 +498,7 @@ services).
 - [x] `POST /orders/{orderId}/cancel` (`order.cancel.own`) — only a WORKING
       order the caller owns is cancellable; anything else (already
       FILLED/REJECTED/CANCELLED, or someone else's order) rejects.
-- [ ] `GET /positions` (`position.read.own`) and `GET /trades`
+- [x] `GET /positions` (`position.read.own`) and `GET /trades`
       (`trade.read.own`) — direct reads, not inferred from `/orders`.
 - [ ] `GET /market/prices` (`market.read`) — exposes `PriceCache`'s current
       snapshot per symbol (age, price) instead of it staying
