@@ -1,10 +1,13 @@
 // Package sse holds the SSE streaming handler this phase's ticket
-// middleware fronts. Subscribes to the risk.updates Redis stream and
-// forwards only the entries whose accountId matches this connection's
-// own account - never another user's risk data over someone else's
-// connection (BLUEPRINT.md's full gateway fan-out, deferred past
-// Phase 10's ticket-auth checklist, built for the cross-cutting
-// integration check's step 10).
+// middleware fronts. Subscribes to the risk.updates Redis stream and,
+// by default, forwards only the entries whose accountId matches this
+// connection's own account - never another user's risk data over
+// someone else's connection (BLUEPRINT.md's full gateway fan-out,
+// deferred past Phase 10's ticket-auth checklist, built for the
+// cross-cutting integration check's step 10). Phase 17 adds the one
+// exception: a ticket minted for a caller who held risk.aggregate.read
+// (Risk Manager/Admin) carries firmWideRisk=true and receives every
+// account's updates instead - see Handle's firmWideRisk branch.
 package sse
 
 import (
@@ -41,7 +44,8 @@ type riskUpdate struct {
 
 // Handle keeps the connection open with periodic heartbeats and
 // forwards any risk.updates entry whose accountId matches this
-// connection's own accountID. Starts reading from "$" - only entries
+// connection's own accountID - or, for a firmWideRisk connection
+// (Phase 17), every entry regardless of accountId. Starts reading from "$" - only entries
 // published after this connection opened, live-tail semantics rather
 // than replaying history; a client that misses an update while
 // disconnected gets the latest snapshot from GET /risk/me on
@@ -50,6 +54,7 @@ type riskUpdate struct {
 func (s *Streamer) Handle(w http.ResponseWriter, r *http.Request) {
 	userID, _ := auth.UserIDFromContext(r.Context())
 	accountID, hasAccount := auth.AccountIDFromContext(r.Context())
+	firmWideRisk := auth.FirmWideRiskFromContext(r.Context())
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -115,7 +120,14 @@ func (s *Streamer) Handle(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, ": heartbeat\n\n")
 			flusher.Flush()
 		case u := <-updates:
-			if !hasAccount || u.fields["accountId"] != accountID {
+			// Phase 17: a firmWideRisk connection (minted for a caller
+			// who held risk.aggregate.read) skips the per-account match
+			// entirely and receives every account's risk_update - this
+			// is the only branch in this switch that broadens forwarding
+			// beyond "this connection's own account", and only ever
+			// because the ticket itself already proved that permission
+			// at mint time, not from anything decided here.
+			if !firmWideRisk && (!hasAccount || u.fields["accountId"] != accountID) {
 				continue // not this connection's own account - never forward another user's risk data
 			}
 			data, err := json.Marshal(u.fields)

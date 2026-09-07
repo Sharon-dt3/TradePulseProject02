@@ -1,5 +1,6 @@
 package com.tradepulse.ledgercore.web;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
@@ -31,6 +32,7 @@ public class StreamTicketController {
     public StreamTicketDto issueTicket(Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         UUID userId = UUID.fromString(jwt.getSubject());
-        return new StreamTicketDto(streamTicketService.issueTicket(userId));
+        List<String> roles = jwt.getClaimAsStringList("user_role");
+        return new StreamTicketDto(streamTicketService.issueTicket(userId, roles));
     }
 }

@@ -1,6 +1,7 @@
 package com.tradepulse.ledgercore.service;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -44,37 +45,54 @@ public class StreamTicketService {
 
     private static final String KEY_PREFIX = "sse:ticket:";
 
+    private static final String FIRM_WIDE_RISK_PERMISSION = "risk.aggregate.read";
+
     private final StringRedisTemplate redisTemplate;
     private final AccountRepository accountRepository;
+    private final PermissionService permissionService;
     private final ObjectMapper objectMapper;
     private final long ticketTtlSeconds;
 
     public StreamTicketService(
             StringRedisTemplate redisTemplate,
             AccountRepository accountRepository,
+            PermissionService permissionService,
             ObjectMapper objectMapper,
             @Value("${ledger.sse.ticket-ttl-seconds}") long ticketTtlSeconds) {
         this.redisTemplate = redisTemplate;
         this.accountRepository = accountRepository;
+        this.permissionService = permissionService;
         this.objectMapper = objectMapper;
         this.ticketTtlSeconds = ticketTtlSeconds;
     }
 
     /**
-     * Mints a new opaque ticket for userId and stores {userId, accountId}
-     * as JSON in Redis with a short TTL. The gateway trusts this payload
-     * as-is once GETDEL finds it, the same way it already trusts a JWT's
-     * verified subject claim.
+     * Mints a new opaque ticket for userId and stores {userId, accountId,
+     * firmWideRisk} as JSON in Redis with a short TTL. The gateway trusts
+     * this payload as-is once GETDEL finds it, the same way it already
+     * trusts a JWT's verified subject claim.
+     *
+     * Phase 17: firmWideRisk is computed here (via the same
+     * PermissionService/role_permissions check every other endpoint in
+     * this codebase uses), not passed in by the caller - a ticket's
+     * scope is derived from the caller's actual roles at mint time,
+     * never a client-asserted flag. gateway's Streamer.Handle uses this
+     * to decide whether to forward every account's risk_update, not
+     * just accountId's, keyed off the same permission the REST
+     * GET /risk/aggregate is gated by, so the two views of firm-wide
+     * risk (poll vs. live stream) always agree on who gets to see it.
      */
-    public String issueTicket(UUID userId) {
+    public String issueTicket(UUID userId, List<String> roles) {
         String ticket = UUID.randomUUID().toString();
         String accountId = accountRepository.findByUserId(userId)
                 .map(account -> account.getId().toString())
                 .orElse(null);
+        boolean firmWideRisk = permissionService.hasPermission(roles, FIRM_WIDE_RISK_PERMISSION);
 
         String payload;
         try {
-            payload = objectMapper.writeValueAsString(new TicketPayload(userId.toString(), accountId));
+            payload = objectMapper.writeValueAsString(
+                    new TicketPayload(userId.toString(), accountId, firmWideRisk));
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("Failed to serialize SSE ticket payload", ex);
         }
@@ -86,6 +104,6 @@ public class StreamTicketService {
         return ticket;
     }
 
-    private record TicketPayload(String userId, String accountId) {
+    private record TicketPayload(String userId, String accountId, boolean firmWideRisk) {
     }
 }

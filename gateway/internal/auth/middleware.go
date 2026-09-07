@@ -23,6 +23,13 @@ const userIDContextKey contextKey = "userID"
 // "the account this connection is scoped to".
 const accountIDContextKey contextKey = "accountID"
 
+// firmWideRiskContextKey holds the firmWideRisk flag embedded in an
+// SSE ticket (Phase 17) - like accountIDContextKey, only ever set by
+// TicketValidator, never by the JWT Verifier. ledger-core computes
+// this at mint time from the caller's actual role_permissions
+// (risk.aggregate.read), never trusted as a client-asserted value.
+const firmWideRiskContextKey contextKey = "firmWideRisk"
+
 // Verifier wraps a JWKS cache and the expected issuer. It mirrors
 // ledger-core's SecurityConfig and risk-engine's get_current_user — same
 // rule (verify signature, expiry, issuer, audience), this language's
@@ -98,4 +105,15 @@ func UserIDFromContext(ctx context.Context) (string, bool) {
 func AccountIDFromContext(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(accountIDContextKey).(string)
 	return id, ok
+}
+
+// FirmWideRiskFromContext reads the firmWideRisk flag an SSE ticket
+// carried (Phase 17) - true only for a ticket minted for a caller who
+// held risk.aggregate.read at mint time. False (including the
+// not-set/zero-value case for a non-ticket-authenticated request) is
+// always the safe default - Streamer.Handle only ever broadens
+// forwarding when this is explicitly true.
+func FirmWideRiskFromContext(ctx context.Context) bool {
+	firmWide, _ := ctx.Value(firmWideRiskContextKey).(bool)
+	return firmWide
 }

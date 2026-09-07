@@ -15,8 +15,9 @@ const ticketKeyPrefix = "sse:ticket:"
 // JSON null (the connected user has no trading account of their own)
 // decodes to nil, kept distinguishable from a real, oddly-empty string.
 type ticketPayload struct {
-	UserID    string  `json:"userId"`
-	AccountID *string `json:"accountId"`
+	UserID       string  `json:"userId"`
+	AccountID    *string `json:"accountId"`
+	FirmWideRisk bool    `json:"firmWideRisk"`
 }
 
 // TicketValidator gates the SSE endpoint on a short-lived, single-use
@@ -75,6 +76,7 @@ func (t *TicketValidator) Middleware(next http.Handler) http.Handler {
 		if payload.AccountID != nil {
 			ctx = context.WithValue(ctx, accountIDContextKey, *payload.AccountID)
 		}
+		ctx = context.WithValue(ctx, firmWideRiskContextKey, payload.FirmWideRisk)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
