@@ -43,6 +43,7 @@ export const ALL_ROLES = [
  */
 export const NAV_ITEMS = [
   { role: "trader", href: "/trader", label: "Trader" },
+  { role: "trader", href: "/markets", label: "Markets" },
   { role: "viewer", href: "/viewer", label: "Viewer" },
   { role: "delegated_viewer", href: "/viewer", label: "Viewer" },
   { role: "compliance", href: "/compliance", label: "Compliance" },
