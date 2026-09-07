@@ -11,6 +11,7 @@ import AccountSummaryCard from "@/components/features/AccountSummaryCard";
 import PositionsTable from "@/components/features/PositionsTable";
 import TradesTable from "@/components/features/TradesTable";
 import OrdersTable from "@/components/features/OrdersTable";
+import TabBar from "@/components/ui/TabBar";
 import { ledgerCoreFetch } from "@/lib/api/client";
 
 const TABS = ["Orders", "Positions", "Trades"];
@@ -85,23 +86,11 @@ function ViewerWorkspace() {
       {accountId && (
         <>
           <div className="mb-4">
-            <AccountSummaryCard account={account} />
+            <AccountSummaryCard account={account} loading={!!accountId} />
           </div>
 
           <Card>
-            <div className="mb-3 flex gap-1 border-b border-line">
-              {TABS.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`px-3 py-2 text-sm font-medium ${
-                    tab === t ? "border-b-2 border-primary text-primary" : "text-muted hover:text-fg"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+            <TabBar tabs={TABS} active={tab} onChange={setTab} />
             {tab === "Orders" && <OrdersTable orders={orders} loading={orders === null} />}
             {tab === "Positions" && <PositionsTable positions={positions} loading={positions === null} />}
             {tab === "Trades" && <TradesTable trades={trades} loading={trades === null} />}

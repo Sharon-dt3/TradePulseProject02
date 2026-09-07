@@ -1,15 +1,15 @@
 const TONES = {
-  success: "bg-success-bg text-success",
-  warning: "bg-warning-bg text-warning",
-  danger: "bg-danger-bg text-danger",
-  info: "bg-info-bg text-info",
-  neutral: "bg-line/50 text-muted",
+  success: "bg-success-bg text-success border-success/20",
+  warning: "bg-warning-bg text-warning border-warning/20",
+  danger: "bg-danger-bg text-danger border-danger/20",
+  info: "bg-info-bg text-info border-info/20",
+  neutral: "bg-primary-soft text-fg border-line",
 };
 
 export default function Badge({ tone = "neutral", children }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${TONES[tone]}`}
+      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-[0.04em] ${TONES[tone]}`}
     >
       {children}
     </span>

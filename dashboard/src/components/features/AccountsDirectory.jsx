@@ -12,6 +12,7 @@ import PositionsTable from "@/components/features/PositionsTable";
 import TradesTable from "@/components/features/TradesTable";
 import OrdersTable from "@/components/features/OrdersTable";
 import GrantsPanel from "@/components/features/GrantsPanel";
+import TabBar from "@/components/ui/TabBar";
 import { formatMoney } from "@/lib/format";
 import { ledgerCoreFetch } from "@/lib/api/client";
 
@@ -120,19 +121,11 @@ export default function AccountsDirectory({ canFreeze = false, canManageGrants =
               </button>
             }
           >
-            <div className="mb-3 flex gap-1 border-b border-line">
-              {DETAIL_TABS.filter((t) => canManageGrants || t !== "Grants & engagements").map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`px-3 py-2 text-sm font-medium ${
-                    tab === t ? "border-b-2 border-primary text-primary" : "text-muted hover:text-fg"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+            <TabBar
+              tabs={DETAIL_TABS.filter((t) => canManageGrants || t !== "Grants & engagements")}
+              active={tab}
+              onChange={setTab}
+            />
             {tab === "Positions" && <PositionsTable positions={positions} loading={positions === null} />}
             {tab === "Trades" && <TradesTable trades={trades} loading={trades === null} />}
             {tab === "Orders" && <OrdersTable orders={orders} loading={orders === null} />}

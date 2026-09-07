@@ -63,7 +63,7 @@ export default function RiskPanel() {
             sharpe: data.sharpe,
             computedAt: data.computedAt,
             insufficientHistory: isInsufficientHistory(data.insufficientHistory),
-            explanation: null,
+            explanation: data.explanation ?? null,
           });
         });
         eventSource.onerror = () => setLiveConnected(false);
@@ -90,16 +90,37 @@ export default function RiskPanel() {
         <>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <div className="text-xs text-muted">VaR (95%)</div>
-              <div className="font-semibold text-fg">{formatNumber(snapshot.var95)}</div>
+              <div
+                className="w-fit cursor-help text-xs text-muted underline decoration-dotted underline-offset-2"
+                title="Value at Risk, 95% confidence: the most this portfolio would be expected to lose in a single day, 95% of the time, based on recent price volatility."
+              >
+                VaR (95%)
+              </div>
+              <div className="font-serif-display tabular-nums text-lg font-semibold text-fg">
+                {formatNumber(snapshot.var95)}
+              </div>
             </div>
             <div>
-              <div className="text-xs text-muted">Volatility</div>
-              <div className="font-semibold text-fg">{formatNumber(snapshot.volatility)}</div>
+              <div
+                className="w-fit cursor-help text-xs text-muted underline decoration-dotted underline-offset-2"
+                title="How much the portfolio's value has been swinging recently. Higher means less predictable day-to-day value."
+              >
+                Volatility
+              </div>
+              <div className="font-serif-display tabular-nums text-lg font-semibold text-fg">
+                {formatNumber(snapshot.volatility)}
+              </div>
             </div>
             <div>
-              <div className="text-xs text-muted">Sharpe</div>
-              <div className="font-semibold text-fg">{formatNumber(snapshot.sharpe)}</div>
+              <div
+                className="w-fit cursor-help text-xs text-muted underline decoration-dotted underline-offset-2"
+                title="Sharpe ratio: return earned per unit of risk taken, above a risk-free baseline. Higher is better; negative means the risk taken isn't being rewarded."
+              >
+                Sharpe
+              </div>
+              <div className="font-serif-display tabular-nums text-lg font-semibold text-fg">
+                {formatNumber(snapshot.sharpe)}
+              </div>
             </div>
           </div>
           {snapshot.explanation && <p className="mt-2 text-xs text-muted">{snapshot.explanation}</p>}

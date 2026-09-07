@@ -6,6 +6,7 @@ import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import FormField, { inputCls } from "@/components/ui/FormField";
+import Modal from "@/components/ui/Modal";
 import { formatMoney, formatDate, statusTone } from "@/lib/format";
 import { ledgerCoreFetch } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthContext";
@@ -26,6 +27,7 @@ export default function LedgerAdjustmentsPanel() {
 
   const [proposeForm, setProposeForm] = useState({ accountId: "", amount: "", reason: "" });
   const [approveId, setApproveId] = useState("");
+  const [confirmApprove, setConfirmApprove] = useState(false);
 
   const propose = async (e) => {
     e.preventDefault();
@@ -46,14 +48,20 @@ export default function LedgerAdjustmentsPanel() {
     }
   };
 
-  const approve = async (e) => {
+  const openApproveConfirm = (e) => {
     e.preventDefault();
+    if (!approveId.trim()) return;
+    setConfirmApprove(true);
+  };
+
+  const approve = async () => {
     setBusy(true);
     setError(null);
     try {
       const result = await ledgerCoreFetch(`/ledger/adjustments/${approveId}/approve`, { method: "POST" });
       setLastResult(result);
       setApproveId("");
+      setConfirmApprove(false);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -93,14 +101,35 @@ export default function LedgerAdjustmentsPanel() {
 
         <Card title="Approve adjustment">
           <Alert tone="info">A different admin must approve — the proposer can't approve their own adjustment.</Alert>
-          <form onSubmit={approve} className="mt-3 space-y-3">
+          <form onSubmit={openApproveConfirm} className="mt-3 space-y-3">
             <FormField label="Adjustment ID">
               <input className={inputCls} value={approveId} onChange={(e) => setApproveId(e.target.value)} required />
             </FormField>
-            <Button type="submit" loading={busy}>Approve</Button>
+            <Button type="submit">Approve</Button>
           </form>
         </Card>
       </div>
+
+      <Modal
+        open={confirmApprove}
+        title="Confirm ledger adjustment approval"
+        onClose={() => setConfirmApprove(false)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirmApprove(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={approve} loading={busy}>
+              Approve adjustment
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-fg">
+          This will move real ledger balance for adjustment <span className="font-mono text-xs">{approveId}</span>.
+          This action posts immediately and can't be undone from the UI.
+        </p>
+      </Modal>
     </div>
   );
 }

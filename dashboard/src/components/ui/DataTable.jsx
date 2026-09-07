@@ -34,7 +34,7 @@ export default function DataTable({ columns, rows, loading, emptyMessage = "Noth
     <div className="overflow-x-auto">
       <table className="w-full min-w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
+          <tr className="border-b border-line text-left text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted">
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -71,7 +71,7 @@ export default function DataTable({ columns, rows, loading, emptyMessage = "Noth
             sortedRows?.map((row) => (
               <tr
                 key={row[rowKey]}
-                className={`border-b border-line/60 hover:bg-line/20 transition-colors ${rowClassName ? rowClassName(row) : ""}`}
+                className={`border-b border-line/60 hover:bg-primary-soft/60 transition-colors ${rowClassName ? rowClassName(row) : ""}`}
               >
                 {columns.map((col) => (
                   <td key={col.key} className="whitespace-nowrap px-3 py-2.5 text-fg">

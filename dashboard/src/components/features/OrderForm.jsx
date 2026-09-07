@@ -4,9 +4,12 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import FormField, { inputCls } from "@/components/ui/FormField";
 import Alert from "@/components/ui/Alert";
-import { rejectionMessage } from "@/lib/format";
+import Modal from "@/components/ui/Modal";
+import { rejectionMessage, formatMoney } from "@/lib/format";
 
-export default function OrderForm({ onSubmit }) {
+const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "TSLA", "BTCUSD"];
+
+export default function OrderForm({ onSubmit, prices }) {
   const [symbol, setSymbol] = useState("");
   const [side, setSide] = useState("BUY");
   const [orderType, setOrderType] = useState("MARKET");
@@ -15,11 +18,20 @@ export default function OrderForm({ onSubmit }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const livePrice = prices?.find((p) => p.symbol === symbol)?.price ?? null;
+  const estimatedNotional =
+    livePrice && quantity ? Number(livePrice) * Number(quantity) : null;
+
+  const openReview = (e) => {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setReviewOpen(true);
+  };
+
+  const confirmSubmit = async () => {
     setSubmitting(true);
     try {
       const body = {
@@ -36,18 +48,29 @@ export default function OrderForm({ onSubmit }) {
       setResult(res);
       setQuantity("");
       setLimitPrice("");
+      setReviewOpen(false);
     } catch (err) {
       setError(err.message);
+      setReviewOpen(false);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={openReview} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <FormField label="Symbol">
-          <input className={inputCls} value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="BTCUSD" required />
+          <select className={inputCls} value={symbol} onChange={(e) => setSymbol(e.target.value)} required>
+            <option value="" disabled>
+              Select a symbol
+            </option>
+            {SYMBOLS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
         </FormField>
         <FormField label="Side">
           <select className={inputCls} value={side} onChange={(e) => setSide(e.target.value)}>
@@ -87,19 +110,76 @@ export default function OrderForm({ onSubmit }) {
         )}
       </div>
 
+      {symbol && (
+        <p className="text-xs text-muted">
+          {livePrice
+            ? `Last price: ${formatMoney(livePrice)}${
+                estimatedNotional ? ` · Est. ${orderType === "MARKET" ? "cost" : "notional"}: ${formatMoney(estimatedNotional)}` : ""
+              }`
+            : "No live price cached for this symbol yet — order may be rejected (NO_MARKET)."}
+        </p>
+      )}
+
       <Alert tone="danger" onDismiss={() => setError(null)}>{error}</Alert>
 
       {result && (
         <Alert tone={result.status === "FILLED" ? "success" : "warning"}>
           {result.status === "FILLED"
-            ? `Filled at ${result.fillPrice}`
+            ? `Filled at ${formatMoney(result.fillPrice)}`
             : `${result.status}${result.rejectionReason ? `: ${rejectionMessage(result.rejectionReason)}` : ""}`}
         </Alert>
       )}
 
-      <Button type="submit" loading={submitting}>
-        Place order
-      </Button>
+      <Button type="submit">Place order</Button>
+
+      <Modal
+        open={reviewOpen}
+        title="Review order"
+        onClose={() => setReviewOpen(false)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setReviewOpen(false)} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button onClick={confirmSubmit} loading={submitting}>
+              Confirm {side === "BUY" ? "buy" : "sell"}
+            </Button>
+          </>
+        }
+      >
+        <dl className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-muted">Symbol</dt>
+            <dd className="font-medium text-fg">{symbol}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-muted">Side</dt>
+            <dd className="font-medium text-fg">{side === "BUY" ? "Buy" : "Sell"}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-muted">Order type</dt>
+            <dd className="font-medium text-fg">{orderType === "MARKET" ? "Market" : "Limit"}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-muted">Quantity</dt>
+            <dd className="font-medium text-fg">{quantity}</dd>
+          </div>
+          {orderType === "LIMIT" && (
+            <div className="flex justify-between">
+              <dt className="text-muted">Limit price</dt>
+              <dd className="font-medium text-fg">{formatMoney(limitPrice)}</dd>
+            </div>
+          )}
+          <div className="flex justify-between border-t border-line pt-2">
+            <dt className="text-muted">
+              {livePrice ? `Est. ${orderType === "MARKET" ? "cost" : "notional"}` : "Live price"}
+            </dt>
+            <dd className="font-medium text-fg">
+              {estimatedNotional ? formatMoney(estimatedNotional) : "Unavailable"}
+            </dd>
+          </div>
+        </dl>
+      </Modal>
     </form>
   );
 }

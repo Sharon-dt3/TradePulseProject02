@@ -7,6 +7,7 @@ import UsersTable from "@/components/features/UsersTable";
 import AccountsDirectory from "@/components/features/AccountsDirectory";
 import AuditLogView from "@/components/features/AuditLogView";
 import LedgerAdjustmentsPanel from "@/components/features/LedgerAdjustmentsPanel";
+import TabBar from "@/components/ui/TabBar";
 
 const SECTIONS = ["Users", "Accounts", "Audit log", "Ledger adjustments"];
 
@@ -17,19 +18,7 @@ function AdminWorkspace() {
     <div>
       <PageHeader title="Admin" subtitle="Users, accounts, access grants, and platform-wide oversight." />
 
-      <div className="mb-4 flex gap-1 border-b border-line">
-        {SECTIONS.map((s) => (
-          <button
-            key={s}
-            onClick={() => setSection(s)}
-            className={`px-3 py-2 text-sm font-medium ${
-              section === s ? "border-b-2 border-primary text-primary" : "text-muted hover:text-fg"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      <TabBar tabs={SECTIONS} active={section} onChange={setSection} />
 
       {section === "Users" && <UsersTable />}
       {section === "Accounts" && <AccountsDirectory canFreeze canManageGrants />}

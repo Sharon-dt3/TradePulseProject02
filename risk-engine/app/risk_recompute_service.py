@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app import positions_repository, price_history_repository, pv_history_repository, risk_snapshot_repository
 from app.risk_calculator import compute_portfolio_value, compute_sharpe, compute_var_and_volatility
+from app.risk_explanation import build_explanation
 
 
 def recompute_for_account(
@@ -49,6 +50,8 @@ def recompute_for_account(
     )
     sharpe, insufficient_sharpe = compute_sharpe(recent_pvs, settings.risk_free_rate_annual)
 
+    insufficient_history = insufficient_var or insufficient_sharpe
+
     risk_snapshot_repository.insert_snapshot(
         session,
         account_id,
@@ -56,15 +59,22 @@ def recompute_for_account(
         volatility,
         sharpe,
         portfolio_value=portfolio_value,
-        insufficient_history=insufficient_var or insufficient_sharpe,
+        insufficient_history=insufficient_history,
         computed_at=now,
     )
+
+    # Same plain-language line GET /risk/me already returns as
+    # risk_explanation - included here too so a live SSE-pushed update
+    # doesn't blank out the explanation the initial snapshot load showed
+    # (RiskPanel.jsx previously hardcoded this to null on every live tick).
+    explanation = build_explanation(var_95, volatility, sharpe, insufficient_history)
 
     return {
         "accountId": str(account_id),
         "var95": str(var_95),
         "volatility": str(volatility),
         "sharpe": str(sharpe),
-        "insufficientHistory": str(insufficient_var or insufficient_sharpe),
+        "insufficientHistory": str(insufficient_history),
         "computedAt": now.isoformat(),
+        "explanation": explanation,
     }

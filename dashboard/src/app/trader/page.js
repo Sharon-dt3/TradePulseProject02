@@ -12,9 +12,12 @@ import PositionsTable from "@/components/features/PositionsTable";
 import TradesTable from "@/components/features/TradesTable";
 import TransactionsTable from "@/components/features/TransactionsTable";
 import MarketPricesTable from "@/components/features/MarketPricesTable";
+import MarketPriceSparklines from "@/components/features/MarketPriceSparklines";
 import StatementForm from "@/components/features/StatementForm";
 import RiskPanel from "@/components/features/RiskPanel";
+import TabBar from "@/components/ui/TabBar";
 import { ledgerCoreFetch } from "@/lib/api/client";
+import { useMarketPriceHistory } from "@/lib/useMarketPriceHistory";
 
 const TABS = ["Orders", "Positions", "Trades", "Transactions"];
 const POLL_INTERVAL_MS = 5000;
@@ -26,6 +29,7 @@ function TraderWorkspace() {
   const [trades, setTrades] = useState(null);
   const [tab, setTab] = useState("Orders");
   const [error, setError] = useState(null);
+  const { latest: marketPrices, history: marketHistory } = useMarketPriceHistory();
 
   const loadAccount = () => ledgerCoreFetch("/accounts/me").then(setAccount).catch((e) => setError(e.message));
   const loadOrders = () => ledgerCoreFetch("/orders").then(setOrders).catch((e) => setError(e.message));
@@ -66,31 +70,19 @@ function TraderWorkspace() {
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <AccountSummaryCard account={account} />
+          <AccountSummaryCard account={account} loading />
         </div>
         <RiskPanel />
       </div>
 
       <div className="mb-4">
         <Card title="Place order">
-          <OrderForm onSubmit={handlePlaceOrder} />
+          <OrderForm onSubmit={handlePlaceOrder} prices={marketPrices} />
         </Card>
       </div>
 
       <Card>
-        <div className="mb-3 flex gap-1 border-b border-line">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-3 py-2 text-sm font-medium ${
-                tab === t ? "border-b-2 border-primary text-primary" : "text-muted hover:text-fg"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        <TabBar tabs={TABS} active={tab} onChange={setTab} />
         {tab === "Orders" && <OrdersTable orders={orders} loading={orders === null} onCancel={handleCancel} />}
         {tab === "Positions" && <PositionsTable positions={positions} loading={positions === null} />}
         {tab === "Trades" && <TradesTable trades={trades} loading={trades === null} />}
@@ -101,7 +93,11 @@ function TraderWorkspace() {
         <Card title="Generate statement">
           {account && <StatementForm accountId={account.accountId} />}
         </Card>
-        <MarketPricesTable />
+        <MarketPricesTable prices={marketPrices} />
+      </div>
+
+      <div className="mt-4">
+        <MarketPriceSparklines latest={marketPrices} history={marketHistory} />
       </div>
     </div>
   );

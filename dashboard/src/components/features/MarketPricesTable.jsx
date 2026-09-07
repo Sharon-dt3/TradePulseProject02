@@ -1,20 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import DataTable from "@/components/ui/DataTable";
 import Card from "@/components/ui/Card";
-import { ledgerCoreFetch } from "@/lib/api/client";
 import { formatMoney } from "@/lib/format";
 
-export default function MarketPricesTable() {
-  const [prices, setPrices] = useState(null);
-
-  useEffect(() => {
-    ledgerCoreFetch("/market/prices").then(setPrices).catch(() => setPrices([]));
-  }, []);
-
+/** prices comes from the shared useMarketPriceHistory() poll (see trader/page.js) - not fetched here directly, so this table and MarketPriceSparklines read one shared poll instead of two independent ones. */
+export default function MarketPricesTable({ prices }) {
   return (
-    <Card title="Market prices">
+    <Card title="Market prices" action={<span className="text-xs text-muted">refreshes every 5s</span>}>
       <DataTable
         loading={prices === null}
         rows={prices}
