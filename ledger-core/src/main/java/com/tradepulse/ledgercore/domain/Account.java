@@ -59,6 +59,25 @@ public class Account {
         return frozen;
     }
 
+    /**
+     * Phase 14 item 1: freezes the account so OrderServiceImpl.resolveOrder
+     * rejects any new order against it (that check already existed from
+     * an earlier phase; this is the only place that ever sets frozen to
+     * true). Idempotent by design - AccountFreezeService only calls this
+     * when the account isn't already frozen, but the method itself makes
+     * no assumption about prior state either way.
+     */
+    public void freeze() {
+        this.frozen = true;
+    }
+
+    /**
+     * Reverses freeze(). See its javadoc.
+     */
+    public void unfreeze() {
+        this.frozen = false;
+    }
+
     public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
