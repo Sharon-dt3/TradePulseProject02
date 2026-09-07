@@ -50,6 +50,45 @@ public class AccountGrant {
         // required by JPA
     }
 
+    private AccountGrant(
+            UUID accountId, UUID grantedToUserId, String purpose, String reason, OffsetDateTime expiresAt) {
+        this.accountId = accountId;
+        this.grantedToUserId = grantedToUserId;
+        this.purpose = purpose;
+        this.reason = reason;
+        this.expiresAt = expiresAt;
+        this.createdAt = OffsetDateTime.now();
+    }
+
+    /**
+     * Phase 18 item 2: Admin's write side of this otherwise read-only
+     * entity. Purpose validity ({@code delegated_viewer}/{@code
+     * support} only - Auditor uses AuditEngagement instead) is the
+     * caller's (AccountGrantService's) responsibility, same division as
+     * UserManagementServiceImpl validating role before {@code new
+     * UserRole(...)}.
+     */
+    public static AccountGrant issue(
+            UUID accountId, UUID grantedToUserId, String purpose, String reason, OffsetDateTime expiresAt) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("reason must not be blank");
+        }
+        if (expiresAt == null || !expiresAt.isAfter(OffsetDateTime.now())) {
+            throw new IllegalArgumentException("expiresAt must be in the future");
+        }
+        return new AccountGrant(accountId, grantedToUserId, purpose, reason, expiresAt);
+    }
+
+    /**
+     * Revokes immediately by pulling expiresAt back to now - the same
+     * "expires_at after now, evaluated fresh on every request" check
+     * this class's javadoc describes then simply fails on the very next
+     * read, no separate revoked/active flag needed.
+     */
+    public void revoke() {
+        this.expiresAt = OffsetDateTime.now();
+    }
+
     public Long getId() {
         return id;
     }
