@@ -7,12 +7,12 @@
 export default function Card({ title, action, className = "", children }) {
   return (
     <section
-      className={`overflow-hidden rounded-lg border border-line bg-surface shadow-[var(--shadow-card)] transition-[border-color,box-shadow] hover:border-[#3b5375] hover:shadow-[var(--shadow-card-hover)] ${className}`}
+      className={`overflow-hidden rounded-lg border border-line bg-surface shadow-[var(--shadow-card)] transition-[border-color,box-shadow] hover:border-[#cba5ad] hover:shadow-[var(--shadow-card-hover)] ${className}`}
     >
       {(title || action) && (
-        <div className="flex min-h-12 items-center justify-between gap-4 border-b border-line bg-[#0e192b]/70 px-4 py-2.5">
+        <div className="flex min-h-12 items-center justify-between gap-4 border-b border-line bg-[#fdf8f6] px-4 py-2.5">
           {title && (
-            <h3 className="text-[0.67rem] font-extrabold uppercase tracking-[0.11em] text-[#b8c8dc]">
+            <h3 className="text-[0.67rem] font-extrabold uppercase tracking-[0.11em] text-[#67464e]">
               {title}
             </h3>
           )}

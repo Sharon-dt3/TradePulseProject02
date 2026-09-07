@@ -1,10 +1,10 @@
 "use client";
 
 const VARIANTS = {
-  primary: "bg-primary text-primary-fg hover:bg-[#5eead4] shadow-sm",
-  secondary: "border border-line bg-surface text-fg hover:border-[#486489] hover:bg-[#192940]",
-  danger: "bg-danger text-[#250b15] hover:bg-[#fda4af] shadow-sm",
-  ghost: "text-fg hover:bg-[#192940]",
+  primary: "bg-primary text-primary-fg hover:bg-[#5d1327] shadow-sm",
+  secondary: "border border-line bg-surface text-fg hover:border-[#caa9af] hover:bg-[#f9eeee]",
+  danger: "bg-danger text-white hover:bg-[#922137] shadow-sm",
+  ghost: "text-fg hover:bg-[#f7e7e8]",
 };
 
 export default function Button({

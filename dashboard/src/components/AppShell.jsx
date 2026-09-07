@@ -21,7 +21,7 @@ export default function AppShell({ children }) {
   const initial = user.email?.[0]?.toUpperCase() ?? "?";
   const nav = (
     <nav aria-label="Primary navigation" className="space-y-1 px-3 py-4">
-      <p className="px-3 pb-2 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-[#8095b2]">
+      <p className="px-3 pb-2 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-[#886d74]">
         Your workspace
       </p>
       {navItems.map((item) => {
@@ -35,13 +35,13 @@ export default function AppShell({ children }) {
             aria-current={active ? "page" : undefined}
             className={`group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold ${
               active
-                ? "bg-primary-soft text-[#7ff5e4]"
-                : "text-[#aebed3] hover:bg-[#192940] hover:text-[#f2f7ff]"
+                ? "bg-[#f5dfe2] text-[#71192f]"
+                : "text-[#5f4b51] hover:bg-[#f9eeee] hover:text-[#4a1423]"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                active ? "bg-primary" : "bg-[#607695] group-hover:bg-[#a9bdd8]"
+                active ? "bg-primary" : "bg-[#c9afb4] group-hover:bg-[#9c5d6c]"
               }`}
             />
             {item.label}
@@ -63,29 +63,29 @@ export default function AppShell({ children }) {
         Skip to main content
       </a>
 
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-[#0d1829] md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-[#5d1327] bg-[#741b32] md:flex">
         <div className="border-b border-line px-5 py-5">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-black text-primary-fg">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#fff7f4] text-sm font-black text-primary">
               T
             </span>
-            <span className="text-lg font-bold tracking-tight text-fg">TradePulse</span>
+            <span className="text-lg font-bold tracking-tight text-white">TradePulse</span>
           </div>
-          <p className="mt-2 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#8095b2]">
+          <p className="mt-2 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#edcbd2]">
             Investment workspace
           </p>
         </div>
         <div className="flex-1">{nav}</div>
-        <div className="m-3 rounded-md border border-success/25 bg-success-bg px-3 py-2.5">
-          <p className="flex items-center gap-2 text-[0.67rem] font-bold uppercase tracking-[0.08em] text-success">
-            <span className="h-1.5 w-1.5 rounded-full bg-success" />
+        <div className="m-3 rounded-md border border-[#b66475] bg-[#62162b] px-3 py-2.5">
+          <p className="flex items-center gap-2 text-[0.67rem] font-bold uppercase tracking-[0.08em] text-[#ffe9e7]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#81dfb3]" />
             Secure session
           </p>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex min-h-14 items-center justify-between border-b border-line bg-[#0d1829]/95 px-4 md:px-6">
+        <header className="flex min-h-14 items-center justify-between border-b border-line bg-[#fffdfb]/95 px-4 md:px-6">
           <button
             type="button"
             onClick={() => setNavOpen(true)}
@@ -101,7 +101,7 @@ export default function AppShell({ children }) {
           </div>
           <div className="flex items-center gap-3 md:ml-auto">
             <span className="hidden text-xs text-muted sm:inline">Signed in as</span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-info-bg text-xs font-bold text-info ring-1 ring-[#31517a]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f5e6e7] text-xs font-bold text-primary ring-1 ring-[#dcc3c7]">
               {initial}
             </span>
             <span className="hidden max-w-48 truncate text-sm font-medium text-fg lg:inline">
@@ -110,7 +110,7 @@ export default function AppShell({ children }) {
             <button
               type="button"
               onClick={signOut}
-              className="rounded-md px-2.5 py-1.5 text-sm font-semibold text-muted hover:bg-[#192940] hover:text-fg"
+              className="rounded-md px-2.5 py-1.5 text-sm font-semibold text-muted hover:bg-[#f7e7e8] hover:text-fg"
             >
               Sign out
             </button>
@@ -119,23 +119,23 @@ export default function AppShell({ children }) {
 
         {navOpen && (
           <div
-            className="fixed inset-0 z-50 bg-[#020713]/70 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-50 bg-[#3b121d]/45 backdrop-blur-sm md:hidden"
             role="dialog"
             aria-modal="true"
             aria-label="Navigation"
           >
-            <aside className="flex h-full w-72 flex-col border-r border-line bg-[#0d1829] shadow-2xl">
-              <div className="flex items-center justify-between border-b border-line px-5 py-5">
+            <aside className="flex h-full w-72 flex-col border-r border-[#5d1327] bg-[#741b32] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#9d4459] px-5 py-5">
                 <div>
-                  <p className="text-lg font-bold text-fg">TradePulse</p>
-                  <p className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#8095b2]">
+                  <p className="text-lg font-bold text-white">TradePulse</p>
+                  <p className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#edcbd2]">
                     Investment workspace
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setNavOpen(false)}
-                  className="rounded-md px-2.5 py-1 text-lg text-muted hover:bg-[#192940] hover:text-fg"
+                  className="rounded-md px-2.5 py-1 text-lg text-[#edcbd2] hover:bg-[#62162b] hover:text-white"
                   aria-label="Close navigation"
                 >
                   ×
