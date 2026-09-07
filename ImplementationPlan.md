@@ -503,10 +503,10 @@ services).
 - [x] `GET /market/prices` (`market.read`) — exposes `PriceCache`'s current
       snapshot per symbol (age, price) instead of it staying
       diagnostics-only.
-- [ ] Add `portfolio_value` to `risk_snapshots` (new column + persisted by
+- [x] Add `portfolio_value` to `risk_snapshots` (new column + persisted by
       `risk_recompute_service.py`, which already computes it for the VaR
       math but currently discards it) and return it from `GET /risk/me`.
-- [ ] A `riskExplanation` field on `GET /risk/me` — plain-language,
+- [x] A `riskExplanation` field on `GET /risk/me` — plain-language,
       rule-based (e.g. "elevated volatility from a concentrated BTCUSD
       position"), not free-text generation; deterministic from the same
       numbers already computed, so it's testable.
