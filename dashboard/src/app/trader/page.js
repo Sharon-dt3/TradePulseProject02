@@ -7,7 +7,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Alert from "@/components/ui/Alert";
-import AccountSummaryCard from "@/components/features/AccountSummaryCard";
+import PortfolioCommandCenter from "@/components/features/PortfolioCommandCenter";
 import OrdersTable from "@/components/features/OrdersTable";
 import OrderForm from "@/components/features/OrderForm";
 import PositionsTable from "@/components/features/PositionsTable";
@@ -17,7 +17,6 @@ import MarketPricesTable from "@/components/features/MarketPricesTable";
 import MarketPriceSparklines from "@/components/features/MarketPriceSparklines";
 import StatementForm from "@/components/features/StatementForm";
 import RiskPanel from "@/components/features/RiskPanel";
-import PortfolioCommandCenter from "@/components/features/PortfolioCommandCenter";
 import TabBar from "@/components/ui/TabBar";
 import { ledgerCoreFetch } from "@/lib/api/client";
 import { formatMoney } from "@/lib/format";
@@ -214,20 +213,25 @@ function TraderWorkspace() {
       </div>
 
       <div className="mb-4">
-        <AccountSummaryCard
-          account={account}
-          positions={positions ?? []}
-          prices={marketPrices ?? []}
-          loading
-        />
+        <Card
+          title="Market pulse"
+          action={<span className="text-xs text-muted">interactive quote workspace</span>}
+        >
+          <MarketPulse
+            prices={marketMonitorPrices}
+            history={marketMonitorHistory}
+            demoEquitiesEnabled={demoEquitiesEnabled}
+            onTrade={handleTradeSymbol}
+          />
+        </Card>
       </div>
 
       <div className="mb-4">
         <RiskPanel />
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card title="Quick actions" className="xl:col-span-1">
+      <div className="mb-4">
+        <Card title="Quick actions">
           <div className="grid gap-2.5">
             <a
               href="#place-order"
@@ -265,18 +269,6 @@ function TraderWorkspace() {
               <span className="text-lg text-[#27805d] transition-transform group-hover:translate-x-0.5">→</span>
             </button>
           </div>
-        </Card>
-        <Card
-          title="Market pulse"
-          action={<span className="text-xs text-muted">interactive quote workspace</span>}
-          className="xl:col-span-2"
-        >
-          <MarketPulse
-            prices={marketMonitorPrices}
-            history={marketMonitorHistory}
-            demoEquitiesEnabled={demoEquitiesEnabled}
-            onTrade={handleTradeSymbol}
-          />
         </Card>
       </div>
 
