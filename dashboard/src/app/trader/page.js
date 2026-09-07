@@ -228,7 +228,9 @@ function TraderWorkspace() {
       </div>
 
       <div className="mb-4">
-        <RiskPanel />
+        <div className="risk-analysis-panel">
+          <RiskPanel />
+        </div>
       </div>
 
       <div className="mb-4">
