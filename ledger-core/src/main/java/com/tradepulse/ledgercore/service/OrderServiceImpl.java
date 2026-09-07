@@ -24,6 +24,8 @@ import com.tradepulse.ledgercore.domain.Trade;
 import com.tradepulse.ledgercore.exception.AccountNotFoundException;
 import com.tradepulse.ledgercore.exception.IdempotencyKeyReusedException;
 import com.tradepulse.ledgercore.exception.InvalidOrderRequestException;
+import com.tradepulse.ledgercore.exception.OrderNotCancellableException;
+import com.tradepulse.ledgercore.exception.OrderNotFoundException;
 import com.tradepulse.ledgercore.marketdata.PriceCache;
 import com.tradepulse.ledgercore.marketdata.PriceSnapshot;
 import com.tradepulse.ledgercore.repository.AccountRepository;
@@ -36,6 +38,8 @@ import com.tradepulse.ledgercore.web.dto.OrderResultDto;
 @Service
 public class OrderServiceImpl implements OrderService {
 
+    private static final String ORDER_CANCEL_PERMISSION = "orders.cancel.own";
+
     private final AccountService accountService;
     private final AccountRepository accountRepository;
     private final PriceCache priceCache;
@@ -45,6 +49,7 @@ public class OrderServiceImpl implements OrderService {
     private final WorkingOrderTracker workingOrderTracker;
     private final TradeRepository tradeRepository;
     private final AuditLogRepository auditLogRepository;
+    private final PermissionService permissionService;
     private final long maxPriceAgeMs;
     private final long limitOrderDefaultTtlHours;
     private final TransactionTemplate requiresNewTransactionTemplate;
@@ -60,6 +65,7 @@ public class OrderServiceImpl implements OrderService {
             WorkingOrderTracker workingOrderTracker,
             TradeRepository tradeRepository,
             AuditLogRepository auditLogRepository,
+            PermissionService permissionService,
             @Value("${ledger.max-price-age-ms}") long maxPriceAgeMs,
             @Value("${ledger.limit-order-default-ttl-hours}") long limitOrderDefaultTtlHours,
             PlatformTransactionManager transactionManager
@@ -73,6 +79,7 @@ public class OrderServiceImpl implements OrderService {
         this.workingOrderTracker = workingOrderTracker;
         this.tradeRepository = tradeRepository;
         this.auditLogRepository = auditLogRepository;
+        this.permissionService = permissionService;
         this.maxPriceAgeMs = maxPriceAgeMs;
         this.limitOrderDefaultTtlHours = limitOrderDefaultTtlHours;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
@@ -405,5 +412,52 @@ public class OrderServiceImpl implements OrderService {
         // attemptFill just resolved it), so its entry must come out of
         // the index or a later tick would try to fill it again.
         workingOrderTracker.remove(order.getSymbol(), order.getId());
+    }
+
+    @Override
+    public OrderResultDto cancelOrder(List<String> roles, UUID userId, UUID orderId) {
+        permissionService.requirePermission(roles, ORDER_CANCEL_PERMISSION);
+
+        Account account = accountService.getAccountForUser(userId)
+                .orElseThrow(() -> AccountNotFoundException.forUserId(userId));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> OrderNotFoundException.forId(orderId));
+
+        // Ownership is checked by comparing accountId, not by querying
+        // "this account's own order" directly - a mismatch here is treated
+        // identically to a nonexistent order (same exception, same 404), so
+        // a client can't use this endpoint to learn that some other
+        // account's order id exists.
+        if (!order.getAccountId().equals(account.getId())) {
+            throw OrderNotFoundException.forId(orderId);
+        }
+
+        if (order.getStatus() != Order.Status.WORKING) {
+            throw OrderNotCancellableException.forStatus(order.getId(), order.getStatus());
+        }
+
+        return transactionTemplate.execute(status -> {
+            order.cancel();
+            orderRepository.save(order);
+            // Leaving WORKING the same way a fill/reject does (see
+            // fillIfStillWorking) - must come out of the tracker or a later
+            // tick would still try to fill it.
+            workingOrderTracker.remove(order.getSymbol(), order.getId());
+
+            auditLogRepository.save(new AuditLog(
+                    userId,
+                    "ORDER_CANCELLED",
+                    "order",
+                    order.getId(),
+                    Map.of(
+                            "symbol", order.getSymbol(),
+                            "side", order.getSide().name(),
+                            "quantity", order.getQuantity()
+                    )
+            ));
+
+            return OrderResultDto.from(order, null);
+        });
     }
 }

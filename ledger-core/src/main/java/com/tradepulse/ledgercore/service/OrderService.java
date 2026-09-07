@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import com.tradepulse.ledgercore.exception.AccountNotFoundException;
+import com.tradepulse.ledgercore.exception.OrderNotCancellableException;
+import com.tradepulse.ledgercore.exception.OrderNotFoundException;
 import com.tradepulse.ledgercore.web.dto.OrderRequestDto;
 import com.tradepulse.ledgercore.web.dto.OrderResultDto;
 
@@ -45,4 +47,23 @@ public interface OrderService {
      * a tick isn't a request anyone is waiting on a response for.
      */
     void handleTick(String symbol, BigDecimal tickPrice);
+
+    /**
+     * Cancels a WORKING order the caller's account owns.
+     *
+     * @param roles   the caller's roles (jwt "user_role" claim), checked
+     *                against {@code orders.cancel.own} before anything else
+     * @param userId  the caller, taken from jwt.sub - resolved to an
+     *                account the same way placeOrder/listOrders are, so a
+     *                client can never cancel another account's order by
+     *                guessing its id
+     * @throws AccountNotFoundException     if userId has no account
+     * @throws OrderNotFoundException       if orderId doesn't exist, or
+     *                                       exists but belongs to a
+     *                                       different account (the two
+     *                                       cases are indistinguishable to
+     *                                       the caller on purpose)
+     * @throws OrderNotCancellableException if the order isn't WORKING
+     */
+    OrderResultDto cancelOrder(List<String> roles, UUID userId, UUID orderId);
 }

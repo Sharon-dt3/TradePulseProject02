@@ -486,4 +486,212 @@ actually fires together, in order:
 11. Dashboard renders — filtered by role/scope, with RLS (Phase 2) as the
     backstop behind the service-layer check at every read.
 
-**Status:** not started — cannot run until Phase 10 is done.
+**Status:** complete — all 11 steps verified live end-to-end (commits e7574ac, d217658, e651bc9).
+
+---
+
+## Phase 12 — Trader completeness
+
+**Depends on:** Phase 1-11 (uses the existing auth/order/risk stack; no new
+services).
+**Task checklist:**
+- [ ] `POST /orders/{orderId}/cancel` (`order.cancel.own`) — only a WORKING
+      order the caller owns is cancellable; anything else (already
+      FILLED/REJECTED/CANCELLED, or someone else's order) rejects.
+- [ ] `GET /positions` (`position.read.own`) and `GET /trades`
+      (`trade.read.own`) — direct reads, not inferred from `/orders`.
+- [ ] `GET /market/prices` (`market.read`) — exposes `PriceCache`'s current
+      snapshot per symbol (age, price) instead of it staying
+      diagnostics-only.
+- [ ] Add `portfolio_value` to `risk_snapshots` (new column + persisted by
+      `risk_recompute_service.py`, which already computes it for the VaR
+      math but currently discards it) and return it from `GET /risk/me`.
+- [ ] A `riskExplanation` field on `GET /risk/me` — plain-language,
+      rule-based (e.g. "elevated volatility from a concentrated BTCUSD
+      position"), not free-text generation; deterministic from the same
+      numbers already computed, so it's testable.
+- [ ] `GET /ledger/transactions` (own) — the underlying journal entries
+      (trades, fees, adjustments), not just trades.
+**Verification checkpoint:** a trader can fully self-serve (cancel, view
+positions/trades/prices/portfolio value/risk explanation/transaction
+history) without a single manual SQL query — the standard this whole
+project has been falling back to all session.
+**Status:** not started.
+
+---
+
+## Phase 13 — Viewer & granted-access reads
+
+**Depends on:** Phase 12 (reuses its read endpoints' shape) and the
+existing `account_grants` schema (V2/V8).
+**Task checklist:**
+- [ ] Viewer role reads its own data — same shape as Trader's reads
+      (Phase 12) minus order creation, gated by `viewer`'s seeded
+      permissions.
+- [ ] Delegated Viewer / Support / Auditor granted-account reads:
+      `GET /accounts/{accountId}`, positions, trades, orders, risk,
+      statements — each checks `account_grants` (or, for auditor,
+      `audit_engagements` — see Phase 16) fresh on every single request,
+      never cached from an earlier check.
+- [ ] Seed the missing granted-scope permissions in `role_permissions`
+      (`account.read.granted`, `position.read.granted`,
+      `trade.read.granted`, `order.read.granted`, `risk.read.granted`,
+      `statement.read.granted`).
+- [ ] Client-supplied `accountId` is never trusted for "is this granted to
+      me" — always re-derived from `account_grants` server-side.
+**Verification checkpoint:** an expired grant denies access on the very
+next request (not just after some cache TTL); a valid grant reads
+correctly; a grant for a different account never leaks the requested
+one.
+**Status:** not started.
+
+---
+
+## Phase 14 — Compliance: freeze and full visibility
+
+**Depends on:** Phase 12/13's read patterns.
+**Task checklist:**
+- [ ] `POST /accounts/{accountId}/freeze` and `/unfreeze`
+      (`accounts.freeze`, already seeded but unused by any endpoint).
+- [ ] Confirm (with a real order attempt) a frozen account rejects new
+      orders while Compliance can still read it in full — the "frozen
+      ≠ invisible" rule from the spec.
+- [ ] Seed and wire `trade.read.all` / `order.read.all` for compliance
+      (currently only `positions.read.any` exists; trades/orders across
+      the whole system aren't compliance-readable at all yet).
+- [ ] Compliance-scoped risk read (`risk.read.all` or reuse an existing
+      permission — decide and document which, same as V7's account-read
+      permission-reuse decision).
+- [ ] Compliance audit-history read (`audit.read.compliance`) — case
+      opens/closes plus relevant account activity.
+**Verification checkpoint:** freeze an account, confirm a new order from
+that account is rejected while a GET on it still succeeds for Compliance;
+confirm Compliance can see trades/orders belonging to accounts other than
+their own.
+**Status:** not started.
+
+---
+
+## Phase 15 — Support: temporary access enforcement
+
+**Depends on:** Phase 13's granted-read pattern (Support reuses the same
+`account_grants` shape, `purpose = 'support'`) and Phase 18 (Admin issues
+the actual grant).
+**Task checklist:**
+- [ ] Support-scoped reads (account/orders/trades/positions) using the
+      Phase 13 granted-access pattern.
+- [ ] A live test proving the "no deployment needed to revoke" rule: issue
+      a grant with a near-future `expires_at`, confirm access works, wait
+      for it to pass, confirm the *very next* request is denied — no
+      restart, no cache clear.
+**Verification checkpoint:** the expiry test above, actually run against a
+live grant, not just reasoned about.
+**Status:** not started.
+
+---
+
+## Phase 16 — Auditor: full historical date-range access
+
+**Depends on:** `audit_engagements` (V17), which currently has exactly one
+working scoped policy (on `trades`).
+**Task checklist:**
+- [ ] Extend the `audit_engagements` date-range pattern from `trades` to:
+      orders, positions/account activity, ledger entries (journal),
+      compliance case history, and statements — five more resource types.
+- [ ] Because ledger-core's own JDBC connection bypasses RLS entirely
+      (same reasoning as V7/V9's comments), the date-range check must be
+      enforced again in Java for every one of these reads, not assumed
+      from the Postgres RLS policy alone.
+- [ ] `POST /audit-engagements` so an engagement can actually be created
+      via API (currently only possible by hand in SQL).
+**Verification checkpoint:** for each of the five resource types, a date
+just outside the engagement's range is denied and a date inside it is
+allowed — run explicitly for all five, not just trades (which V17 already
+covers).
+**Status:** not started.
+
+---
+
+## Phase 17 — Risk Manager: firm-wide risk
+
+**Depends on:** risk-engine's existing `risk_snapshots`/recompute
+pipeline (Phase 7) and the `risk.updates` publish (this session).
+**Task checklist:**
+- [ ] `GET /risk/aggregate` (`risk.aggregate.read`, already seeded) —
+      firm-wide exposure summed across all accounts.
+- [ ] Exposure by account and exposure by symbol as separate, queryable
+      breakdowns of the same aggregate.
+- [ ] High-risk account identification — a threshold-based flag (document
+      the threshold choice, same as every other "this cutoff was a
+      deliberate choice" comment already in this codebase).
+- [ ] Real-time firm-wide monitoring: a Risk Manager's SSE connection
+      needs every account's `risk_update`, not just their own — this is
+      a different filter rule in `gateway`'s `Streamer.Handle` than the
+      per-`accountId` match built this session, keyed by role instead.
+**Verification checkpoint:** the aggregate number equals the sum of the
+individual account snapshots it's built from (checked against real data,
+not just code review); a Risk Manager's SSE connection receives updates
+for accounts that aren't their own.
+**Status:** not started.
+
+---
+
+## Phase 18 — Admin: user, role, and grant management
+
+**Depends on:** everything above that a grant/role change would otherwise
+require manual SQL for.
+**Task checklist:**
+- [ ] User listing and role assignment/removal (`user.manag`,
+      `role.manage` — not yet even seeded in `role_permissions`) —
+      replacing every manual `INSERT INTO user_roles` this whole session
+      has relied on.
+- [ ] `account_grants` create/revoke (Delegated Viewer, Support) and
+      `audit_engagements` create (Auditor) — Admin is the issuer per the
+      spec ("Admin manages Support access, creates account grants"); the
+      *read* side built in Phases 13/15/16 only ever consumes a grant,
+      never creates one.
+- [ ] Admin audit read (`audit.read.all`) — broader than Compliance's
+      `audit.read.compliance` from Phase 14.
+**Verification checkpoint:** grant a role, issue a Support grant with a
+reason and expiry, and revoke a grant — all three via API calls, zero
+manual SQL, in the same session that will then use Phase 15's test to
+confirm the grant actually works and actually expires.
+**Status:** not started.
+
+---
+
+## Phase 19 — Statements
+
+**Depends on:** the existing `POST /accounts/{accountId}/statements`
+(generation-only, already built).
+**Task checklist:**
+- [ ] `GET /accounts/{accountId}/statements` (list) and a download
+      endpoint, scoped by role: own (Trader/Viewer), granted
+      (Viewer/Support/Auditor via Phase 13/16), all (Admin), relevant
+      (Compliance).
+**Verification checkpoint:** each role sees exactly the statements its
+scope allows — a trader never sees another account's, an admin sees
+everything.
+**Status:** not started.
+
+---
+
+## Phase 20 — Dashboard: a real UI for every role
+
+**Depends on:** Phases 12-19 (each role's view is only as real as its
+backend).
+**Task checklist:**
+- [ ] Replace the current plain-HTML-table look with an actual designed
+      interface — layout, typography, color, real components — not just
+      more tables.
+- [ ] A distinct view per role: Trader (polish the existing Orders page),
+      Viewer, Compliance, Risk Manager, Admin, Support, Auditor — each
+      wired to its own phase's endpoints above, showing only what that
+      role can see.
+- [ ] Role-aware navigation — a user only ever sees entry points to
+      views their own roles unlock.
+**Verification checkpoint:** sign in as one test user per role, confirm
+each sees only its own view and only the data its permissions allow —
+this is the dashboard-side echo of every RLS/permission check built in
+Phases 12-19.
+**Status:** not started.

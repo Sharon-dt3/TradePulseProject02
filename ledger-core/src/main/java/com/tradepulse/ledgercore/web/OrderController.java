@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,5 +51,17 @@ public class OrderController {
         UUID userId = UUID.fromString(jwt.getSubject());
 
         return ResponseEntity.ok(orderService.listOrders(userId));
+    }
+
+    @PostMapping("/orders/{orderId}/cancel")
+    public ResponseEntity<OrderResultDto> cancelOrder(
+            @PathVariable UUID orderId,
+            Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        UUID userId = UUID.fromString(jwt.getSubject());
+        List<String> roles = jwt.getClaimAsStringList("user_role");
+
+        OrderResultDto result = orderService.cancelOrder(roles, userId, orderId);
+        return ResponseEntity.ok(result);
     }
 }

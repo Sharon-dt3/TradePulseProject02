@@ -201,6 +201,18 @@ public class Order {
         this.status = Status.EXPIRED;
     }
 
+    /**
+     * WORKING -> CANCELLED, via a caller-initiated cancel request. Only a
+     * WORKING order can be cancelled - by the time placeOrder's response
+     * returns, a NEW order has already resolved synchronously to FILLED,
+     * REJECTED, or WORKING (see OrderServiceImpl.resolveOrder), so a
+     * client-visible NEW order never actually exists to cancel.
+     */
+    public void cancel() {
+        requireStatusIn(Status.WORKING);
+        this.status = Status.CANCELLED;
+    }
+
     private void requireStatusIn(Status... expected) {
         for (Status s : expected) {
             if (this.status == s) {
