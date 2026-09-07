@@ -238,52 +238,60 @@ export default function RiskPanel() {
           )}
 
           {history && (
-            <div className="mt-4 space-y-4 border-t border-line pt-4">
-              <PortfolioTrend trend={history.trend} />
+            <details className="group mt-4 border-t border-line pt-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.05em] text-muted">
+                Risk details
+                <span aria-hidden="true" className="text-base transition-transform group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <div className="mt-4 space-y-4">
+                <PortfolioTrend trend={history.trend} />
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs text-muted">Portfolio change</p>
-                  <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.portfolio_value, true)}`}>
-                    {formatDelta(history.changes.portfolio_value, formatMoney)}
-                  </p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs text-muted">Portfolio change</p>
+                    <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.portfolio_value, true)}`}>
+                      {formatDelta(history.changes.portfolio_value, formatMoney)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs text-muted">VaR change</p>
+                    <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.var_95)}`}>
+                      {formatDelta(history.changes.var_95, formatNumber)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs text-muted">Sharpe change</p>
+                    <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.sharpe, true)}`}>
+                      {formatDelta(history.changes.sharpe, formatNumber)}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs text-muted">VaR change</p>
-                  <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.var_95)}`}>
-                    {formatDelta(history.changes.var_95, formatNumber)}
+
+                <p className="text-xs leading-relaxed text-muted">{changeExplanation}</p>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
+                    Recent execution context
                   </p>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs text-muted">Sharpe change</p>
-                  <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.sharpe, true)}`}>
-                    {formatDelta(history.changes.sharpe, formatNumber)}
-                  </p>
+                  {history.recent_trades.length ? (
+                    <ul className="mt-2 max-h-28 space-y-1.5 overflow-y-auto pr-1 text-xs text-muted">
+                      {history.recent_trades.map((trade) => (
+                        <li key={`${trade.executed_at}-${trade.symbol}`}>
+                          <span className="font-medium text-fg">{trade.side}</span>{" "}
+                          {trade.quantity} {trade.symbol} at {formatMoney(trade.price)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted">
+                      No executed trades are available in the recorded account history.
+                    </p>
+                  )}
                 </div>
               </div>
-
-              <p className="text-xs leading-relaxed text-muted">{changeExplanation}</p>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
-                  Recent execution context
-                </p>
-                {history.recent_trades.length ? (
-                  <ul className="mt-2 space-y-1.5 text-xs text-muted">
-                    {history.recent_trades.map((trade) => (
-                      <li key={`${trade.executed_at}-${trade.symbol}`}>
-                        <span className="font-medium text-fg">{trade.side}</span>{" "}
-                        {trade.quantity} {trade.symbol} at {formatMoney(trade.price)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2 text-xs text-muted">
-                    No executed trades are available in the recorded account history.
-                  </p>
-                )}
-              </div>
-            </div>
+            </details>
           )}
         </>
       )}
