@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { decodeRoles } from "@/lib/roles";
 import Button from "@/components/ui/Button";
 import FormField, { inputCls } from "@/components/ui/FormField";
 import Alert from "@/components/ui/Alert";
@@ -16,7 +17,7 @@ const SIGN_IN_ROLES = [
 ];
 
 export default function Home() {
-  const { user, roles, loading, signIn, signOut } = useAuth();
+  const { user, loading, signIn, signOut } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,28 +25,28 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedRole, setSelectedRole] = useState(SIGN_IN_ROLES[0]);
 
-  useEffect(() => {
-    if (loading || !user) return;
-
-    const selectedRoleIsAvailable = roles.includes(selectedRole.role);
-    if (selectedRoleIsAvailable) {
-      router.replace(selectedRole.href);
-      return;
-    }
-
-    setError(
-      `This account is not authorized for the ${selectedRole.label} workspace. Please choose an authorized role and try again.`
-    );
-    signOut();
-  }, [loading, user, roles, router, selectedRole, signOut]);
-
   const handleSignIn = async (event) => {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
-    const { error: signInError } = await signIn(email, password);
+
+    const { data, error: signInError } = await signIn(email, password);
     setSubmitting(false);
-    if (signInError) setError(signInError.message);
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
+
+    const signedInRoles = decodeRoles(data?.session?.access_token);
+    if (!signedInRoles.includes(selectedRole.role)) {
+      await signOut();
+      setError(
+        `This account is not authorized for the ${selectedRole.label} workspace. Please choose an authorized role and try again.`
+      );
+      return;
+    }
+
+    router.replace(selectedRole.href);
   };
 
   if (loading) {

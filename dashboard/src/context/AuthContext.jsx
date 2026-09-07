@@ -37,8 +37,19 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = (email, password) =>
-    supabase.auth.signInWithPassword({ email, password });
+  const signIn = async (email, password) => {
+    const signInResult = await supabase.auth.signInWithPassword({ email, password });
+
+    if (signInResult.error || !signInResult.data.session) {
+      return signInResult;
+    }
+
+    // Roles are injected into the access token by Supabase's access-token
+    // hook. Refresh before navigation so recently assigned roles are not
+    // rejected based on a previously cached claim.
+    const refreshResult = await supabase.auth.refreshSession();
+    return refreshResult.error ? signInResult : refreshResult;
+  };
 
   const signOut = () => supabase.auth.signOut();
 
