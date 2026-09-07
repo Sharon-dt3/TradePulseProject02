@@ -1,80 +1,40 @@
 @import "tailwindcss";
 
 /**
- * Phase 20.1: design tokens for the whole dashboard. Every color a
- * component uses should come from one of these CSS variables (via a
- * Tailwind utility like bg-surface/text-danger), not a one-off hex
- * value - that's what keeps 5 different role views looking like one
- * system instead of 5 accidentally-different ones. Light values live
- * directly on @theme (Tailwind's build-time token declarations,
- * compiled to :root custom properties + matching utility classes);
- * dark values override those same custom properties under a plain
- * :root selector inside the prefers-color-scheme media query - Tailwind
- * v4 doesn't support @theme itself inside @media, but overriding the
- * underlying variable it already declared works exactly the same way.
+ * Shared design tokens for the TradePulse dashboard.
  *
- * Palette direction: institutional finance (deep navy + white, a
- * restrained crimson reserved for loss/danger, a serif accent on
- * headline numbers and titles) rather than the brighter SaaS-blue
- * scheme this started with.
+ * The application intentionally uses a stable light theme so operating-system
+ * dark-mode preferences do not unexpectedly change the workspace contrast or
+ * navigation colors. Components consume these tokens through Tailwind utility
+ * classes such as bg-surface, text-fg, and border-line.
  */
 @theme {
-  --color-bg: #f5f6f8;
-  --color-fg: #10192b;
+  --color-bg: #f4f7fb;
+  --color-fg: #172033;
   --color-surface: #ffffff;
-  --color-line: #e1e4ea;
-  --color-muted: #5b6472;
+  --color-line: #dce4ef;
+  --color-muted: #657188;
 
-  --color-primary: #0a2540;
+  --color-primary: #2457a6;
   --color-primary-fg: #ffffff;
-  --color-primary-soft: #eaeef3;
+  --color-primary-soft: #eaf1fc;
 
-  --color-success: #0f7b3f;
-  --color-success-bg: #eaf7ef;
-  --color-warning: #92400e;
-  --color-warning-bg: #fdf3e7;
-  --color-danger: #a3241c;
-  --color-danger-bg: #fbeceb;
-  --color-info: #0b5875;
-  --color-info-bg: #e9f4f8;
+  --color-success: #18794e;
+  --color-success-bg: #eaf8f0;
+  --color-warning: #9a5a12;
+  --color-warning-bg: #fff5e7;
+  --color-danger: #b42318;
+  --color-danger-bg: #fff0ee;
+  --color-info: #176a9c;
+  --color-info-bg: #eaf6fc;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
   --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
     "Times New Roman", serif;
 
-  --shadow-card: 0 1px 2px rgba(16, 25, 43, 0.04), 0 4px 12px rgba(16, 25, 43, 0.06);
-  --shadow-card-hover: 0 2px 4px rgba(16, 25, 43, 0.06), 0 8px 20px rgba(16, 25, 43, 0.09);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0a0f1a;
-    --color-fg: #e6e9ef;
-    --color-surface: #111826;
-    --color-line: #232c3d;
-    --color-muted: #8892a3;
-
-    --color-primary: #4f7cac;
-    --color-primary-fg: #06111f;
-    --color-primary-soft: #172236;
-
-    --color-success: #3fb87a;
-    --color-success-bg: #0d2318;
-    --color-warning: #d99a4e;
-    --color-warning-bg: #2a1c0c;
-    --color-danger: #e07068;
-    --color-danger-bg: #2a1210;
-    --color-info: #4fb3d9;
-    --color-info-bg: #0c222b;
-
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.35);
-    --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 10px 24px rgba(0, 0, 0, 0.4);
-  }
-
-  html {
-    color-scheme: dark;
-  }
+  --shadow-card: 0 1px 2px rgba(36, 61, 99, 0.03), 0 8px 24px rgba(36, 61, 99, 0.06);
+  --shadow-card-hover: 0 3px 8px rgba(36, 61, 99, 0.06), 0 14px 30px rgba(36, 61, 99, 0.1);
 }
 
 html,
@@ -87,7 +47,9 @@ body {
 body {
   min-height: 100%;
   color: var(--color-fg);
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at top right, rgba(219, 233, 252, 0.55), transparent 29rem),
+    var(--color-bg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
