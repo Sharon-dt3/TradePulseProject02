@@ -70,7 +70,12 @@ function TraderWorkspace() {
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <AccountSummaryCard account={account} loading />
+          <AccountSummaryCard
+            account={account}
+            positions={positions ?? []}
+            prices={marketPrices ?? []}
+            loading
+          />
         </div>
         <RiskPanel />
       </div>
@@ -84,7 +89,13 @@ function TraderWorkspace() {
       <Card>
         <TabBar tabs={TABS} active={tab} onChange={setTab} />
         {tab === "Orders" && <OrdersTable orders={orders} loading={orders === null} onCancel={handleCancel} />}
-        {tab === "Positions" && <PositionsTable positions={positions} loading={positions === null} />}
+        {tab === "Positions" && (
+          <PositionsTable
+            positions={positions}
+            prices={marketPrices ?? []}
+            loading={positions === null}
+          />
+        )}
         {tab === "Trades" && <TradesTable trades={trades} loading={trades === null} />}
         {tab === "Transactions" && <TransactionsTable />}
       </Card>

@@ -20,32 +20,30 @@ export default function OrderForm({ onSubmit, prices }) {
   const [result, setResult] = useState(null);
   const [reviewOpen, setReviewOpen] = useState(false);
 
-  const livePrice = prices?.find((p) => p.symbol === symbol)?.price ?? null;
-  const estimatedNotional =
-    livePrice && quantity ? Number(livePrice) * Number(quantity) : null;
+  const livePrice = prices?.find((price) => price.symbol === symbol)?.price ?? null;
+  const effectivePrice = orderType === "LIMIT" ? Number(limitPrice) : Number(livePrice);
+  const estimatedNotional = effectivePrice && quantity ? effectivePrice * Number(quantity) : null;
+  const hasValidQuantity = Number(quantity) > 0;
+  const hasValidLimit = orderType !== "LIMIT" || Number(limitPrice) > 0;
 
-  const openReview = (e) => {
-    e.preventDefault();
+  const openReview = (event) => {
+    event.preventDefault();
     setError(null);
     setResult(null);
+    if (!hasValidQuantity || !hasValidLimit) {
+      setError("Enter a quantity greater than zero and, for a limit order, a valid limit price.");
+      return;
+    }
     setReviewOpen(true);
   };
 
   const confirmSubmit = async () => {
     setSubmitting(true);
     try {
-      const body = {
-        symbol: symbol.trim().toUpperCase(),
-        side,
-        orderType,
-        quantity: Number(quantity),
-        requestId: crypto.randomUUID(),
-      };
-      if (orderType === "LIMIT") {
-        body.limitPrice = Number(limitPrice);
-      }
-      const res = await onSubmit(body);
-      setResult(res);
+      const body = { symbol: symbol.trim().toUpperCase(), side, orderType, quantity: Number(quantity), requestId: crypto.randomUUID() };
+      if (orderType === "LIMIT") body.limitPrice = Number(limitPrice);
+      const response = await onSubmit(body);
+      setResult(response);
       setQuantity("");
       setLimitPrice("");
       setReviewOpen(false);
@@ -58,127 +56,60 @@ export default function OrderForm({ onSubmit, prices }) {
   };
 
   return (
-    <form onSubmit={openReview} className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <FormField label="Symbol">
-          <select className={inputCls} value={symbol} onChange={(e) => setSymbol(e.target.value)} required>
-            <option value="" disabled>
-              Select a symbol
-            </option>
-            {SYMBOLS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+    <form onSubmit={openReview} className="space-y-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FormField label="Symbol" hint="Quotes may be delayed outside market hours.">
+          <select className={inputCls} value={symbol} onChange={(event) => setSymbol(event.target.value)} required>
+            <option value="" disabled>Select a symbol</option>
+            {SYMBOLS.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </FormField>
-        <FormField label="Side">
-          <select className={inputCls} value={side} onChange={(e) => setSide(e.target.value)}>
-            <option value="BUY">Buy</option>
-            <option value="SELL">Sell</option>
+        <FormField label="Action">
+          <select className={inputCls} value={side} onChange={(event) => setSide(event.target.value)}>
+            <option value="BUY">Buy</option><option value="SELL">Sell</option>
           </select>
         </FormField>
         <FormField label="Order type">
-          <select className={inputCls} value={orderType} onChange={(e) => setOrderType(e.target.value)}>
-            <option value="MARKET">Market</option>
-            <option value="LIMIT">Limit</option>
+          <select className={inputCls} value={orderType} onChange={(event) => setOrderType(event.target.value)}>
+            <option value="MARKET">Market</option><option value="LIMIT">Limit</option>
           </select>
         </FormField>
         <FormField label="Quantity">
-          <input
-            className={inputCls}
-            type="number"
-            step="any"
-            min="0"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            required
-          />
+          <input className={inputCls} type="number" inputMode="decimal" step="any" min="0.00000001" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
         </FormField>
-        {orderType === "LIMIT" && (
-          <FormField label="Limit price">
-            <input
-              className={inputCls}
-              type="number"
-              step="any"
-              min="0"
-              value={limitPrice}
-              onChange={(e) => setLimitPrice(e.target.value)}
-              required
-            />
-          </FormField>
-        )}
       </div>
 
-      {symbol && (
-        <p className="text-xs text-muted">
-          {livePrice
-            ? `Last price: ${formatMoney(livePrice)}${
-                estimatedNotional ? ` · Est. ${orderType === "MARKET" ? "cost" : "notional"}: ${formatMoney(estimatedNotional)}` : ""
-              }`
-            : "No live price cached for this symbol yet — order may be rejected (NO_MARKET)."}
-        </p>
+      {orderType === "LIMIT" && (
+        <div className="max-w-sm">
+          <FormField label="Limit price" hint="A limit order may not execute if the market does not reach your price.">
+            <input className={inputCls} type="number" inputMode="decimal" step="any" min="0.00000001" value={limitPrice} onChange={(event) => setLimitPrice(event.target.value)} required />
+          </FormField>
+        </div>
       )}
+
+      <div className="rounded-lg border border-line bg-bg px-4 py-3 text-sm">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="font-medium text-fg">Order estimate</span>
+          <span className="font-serif-display tabular-nums text-lg font-semibold text-fg">{estimatedNotional ? formatMoney(estimatedNotional) : "Awaiting quote"}</span>
+        </div>
+        <p className="mt-1 text-xs leading-relaxed text-muted">
+          {livePrice ? `Latest ${symbol} quote: ${formatMoney(livePrice)}. ` : "No current quote is available; the order may be rejected. "}
+          Market orders execute at the available market price and the final execution price can differ from this estimate. Fees, taxes, and settlement effects are not included.
+        </p>
+      </div>
 
       <Alert tone="danger" onDismiss={() => setError(null)}>{error}</Alert>
+      {result && <Alert tone={result.status === "FILLED" ? "success" : "warning"}>{result.status === "FILLED" ? `Order filled at ${formatMoney(result.fillPrice)}.` : `${result.status}${result.rejectionReason ? `: ${rejectionMessage(result.rejectionReason)}` : ""}`}</Alert>}
 
-      {result && (
-        <Alert tone={result.status === "FILLED" ? "success" : "warning"}>
-          {result.status === "FILLED"
-            ? `Filled at ${formatMoney(result.fillPrice)}`
-            : `${result.status}${result.rejectionReason ? `: ${rejectionMessage(result.rejectionReason)}` : ""}`}
-        </Alert>
-      )}
+      <Button type="submit">Review order</Button>
 
-      <Button type="submit">Place order</Button>
-
-      <Modal
-        open={reviewOpen}
-        title="Review order"
-        onClose={() => setReviewOpen(false)}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setReviewOpen(false)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button onClick={confirmSubmit} loading={submitting}>
-              Confirm {side === "BUY" ? "buy" : "sell"}
-            </Button>
-          </>
-        }
-      >
-        <dl className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted">Symbol</dt>
-            <dd className="font-medium text-fg">{symbol}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted">Side</dt>
-            <dd className="font-medium text-fg">{side === "BUY" ? "Buy" : "Sell"}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted">Order type</dt>
-            <dd className="font-medium text-fg">{orderType === "MARKET" ? "Market" : "Limit"}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted">Quantity</dt>
-            <dd className="font-medium text-fg">{quantity}</dd>
-          </div>
-          {orderType === "LIMIT" && (
-            <div className="flex justify-between">
-              <dt className="text-muted">Limit price</dt>
-              <dd className="font-medium text-fg">{formatMoney(limitPrice)}</dd>
-            </div>
-          )}
-          <div className="flex justify-between border-t border-line pt-2">
-            <dt className="text-muted">
-              {livePrice ? `Est. ${orderType === "MARKET" ? "cost" : "notional"}` : "Live price"}
-            </dt>
-            <dd className="font-medium text-fg">
-              {estimatedNotional ? formatMoney(estimatedNotional) : "Unavailable"}
-            </dd>
-          </div>
+      <Modal open={reviewOpen} title="Review your order" onClose={() => setReviewOpen(false)} footer={<><Button type="button" variant="secondary" onClick={() => setReviewOpen(false)} disabled={submitting}>Edit order</Button><Button type="button" onClick={confirmSubmit} loading={submitting}>Submit {side.toLowerCase()} order</Button></>}>
+        <dl className="space-y-3 text-sm">
+          {[["Action", side === "BUY" ? "Buy" : "Sell"], ["Symbol", symbol], ["Order type", orderType === "MARKET" ? "Market" : "Limit"], ["Quantity", quantity], ...(orderType === "LIMIT" ? [["Limit price", formatMoney(limitPrice)]] : []), ["Estimated order value", estimatedNotional ? formatMoney(estimatedNotional) : "Unavailable"]].map(([label, value]) => (
+            <div key={label} className="flex justify-between gap-5"><dt className="text-muted">{label}</dt><dd className="text-right font-medium text-fg">{value}</dd></div>
+          ))}
         </dl>
+        <Alert tone="warning"><span className="text-xs">By submitting, you acknowledge that quotes can change and that a market order has no guaranteed execution price.</span></Alert>
       </Modal>
     </form>
   );
