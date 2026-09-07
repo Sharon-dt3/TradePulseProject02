@@ -8,6 +8,14 @@ import Button from "@/components/ui/Button";
 import FormField, { inputCls } from "@/components/ui/FormField";
 import Alert from "@/components/ui/Alert";
 
+const SIGN_IN_ROLES = [
+  { role: "trader", label: "Trader", description: "Orders, positions, and markets", href: "/trader" },
+  { role: "viewer", label: "Viewer", description: "Read-only account access", href: "/viewer" },
+  { role: "admin", label: "Admin", description: "Users, accounts, and oversight", href: "/admin" },
+  { role: "compliance", label: "Compliance", description: "Cases, controls, and audit trail", href: "/compliance" },
+  { role: "risk_manager", label: "Risk Manager", description: "Firm-wide risk visibility", href: "/risk" },
+];
+
 export default function Home() {
   const { user, roles, loading, signIn } = useAuth();
   const router = useRouter();
@@ -15,14 +23,18 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(SIGN_IN_ROLES[0]);
 
   useEffect(() => {
     if (loading || !user) return;
     const items = navItemsForRoles(roles);
-    if (items.length > 0) {
+    const selectedRoleIsAvailable = roles.includes(selectedRole.role);
+    if (selectedRoleIsAvailable) {
+      router.replace(selectedRole.href);
+    } else if (items.length > 0) {
       router.replace(items[0].href);
     }
-  }, [loading, user, roles, router]);
+  }, [loading, user, roles, router, selectedRole]);
 
   const handleSignIn = async (event) => {
     event.preventDefault();
@@ -86,9 +98,38 @@ export default function Home() {
 
           <p className="text-[0.67rem] font-bold uppercase tracking-[0.15em] text-primary">Secure access</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#741b32]">Welcome back</h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted">Sign in to open your personalized trading workspace.</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Choose the workspace you want to open, then sign in with your assigned account.
+          </p>
 
-          <form onSubmit={handleSignIn} className="mt-7 space-y-4">
+          <div className="mt-6">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted">Sign in as</p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {SIGN_IN_ROLES.map((role) => {
+                const isSelected = selectedRole.role === role.role;
+                return (
+                  <button
+                    key={role.role}
+                    type="button"
+                    onClick={() => setSelectedRole(role)}
+                    aria-pressed={isSelected}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      isSelected
+                        ? "border-primary bg-primary text-primary-fg shadow-sm"
+                        : "border-line bg-surface text-fg hover:border-[#caa9af] hover:bg-primary-soft"
+                    }`}
+                  >
+                    <span className="block text-sm font-bold">{role.label}</span>
+                    <span className={`mt-0.5 block text-xs ${isSelected ? "text-white/80" : "text-muted"}`}>
+                      {role.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <form onSubmit={handleSignIn} className="mt-6 space-y-4">
             <FormField label="Email address">
               <input
                 className={inputCls}
@@ -112,9 +153,12 @@ export default function Home() {
             </FormField>
             <Alert tone="danger" onDismiss={() => setError(null)}>{error}</Alert>
             <Button type="submit" loading={submitting} className="mt-2 w-full">
-              Sign in
+              Sign in as {selectedRole.label}
             </Button>
           </form>
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Your available workspace is determined by your assigned role after authentication.
+          </p>
         </div>
       </section>
     </main>
