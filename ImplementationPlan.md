@@ -500,7 +500,7 @@ services).
       FILLED/REJECTED/CANCELLED, or someone else's order) rejects.
 - [x] `GET /positions` (`position.read.own`) and `GET /trades`
       (`trade.read.own`) — direct reads, not inferred from `/orders`.
-- [ ] `GET /market/prices` (`market.read`) — exposes `PriceCache`'s current
+- [x] `GET /market/prices` (`market.read`) — exposes `PriceCache`'s current
       snapshot per symbol (age, price) instead of it staying
       diagnostics-only.
 - [ ] Add `portfolio_value` to `risk_snapshots` (new column + persisted by
