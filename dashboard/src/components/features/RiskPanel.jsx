@@ -114,7 +114,60 @@ function PortfolioTrend({ trend }) {
   );
 }
 
-function DetailedRiskMetrics({ analysis }) {
+function metricChange(history, key, formatter) {
+  const change = history?.changes?.[key];
+  if (change === null || change === undefined) {
+    return "A prior stored risk snapshot is not available for comparison yet.";
+  }
+
+  const amount = Number(change);
+  if (amount === 0) return "This value is unchanged from the prior stored risk snapshot.";
+  return `Since the prior stored risk snapshot, this value ${amount > 0 ? "increased" : "decreased"} by ${formatter(Math.abs(amount))}.`;
+}
+
+function recentTradeContext(history) {
+  const trade = history?.recent_trades?.[0];
+  if (!trade) return "No recent execution is available to place this update in trading context.";
+
+  const executedAt = trade.executed_at
+    ? new Date(trade.executed_at).toLocaleString()
+    : "an unknown time";
+  return `Most recent execution: ${trade.side} ${formatNumber(trade.quantity)} ${trade.symbol} at ${formatMoney(trade.price)} on ${executedAt}. This is timing context only; it does not establish that the trade caused the risk change.`;
+}
+
+function volatilityExplanation(analysis, history) {
+  const volatility = Number(analysis.volatility);
+  if (!Number.isFinite(volatility)) {
+    return "Volatility is unavailable because the current holdings do not yet have enough aligned persisted price observations.";
+  }
+  if (volatility === 0 && !(analysis.positions ?? []).length) {
+    return "Volatility is 0% because this is currently a cash-only account with no priced position exposure.";
+  }
+  if (volatility === 0) {
+    return "Volatility is genuinely 0% for the current aligned return window: the observed portfolio returns did not vary. It will change when persisted quotes produce differing returns.";
+  }
+  if (volatility < 0.00005) {
+    return `The displayed 0.00% is rounding: the current unrounded volatility is ${(volatility * 100).toFixed(5)}%.`;
+  }
+  return `${metricChange(history, "volatility", formatPct)} ${recentTradeContext(history)}`;
+}
+
+function RiskMetricDetails({ label, value, children }) {
+  return (
+    <details className="group rounded-lg bg-bg px-3 py-2.5">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
+        <span>
+          <span className="block text-xs text-muted">{label}</span>
+          <span className="mt-1 block font-serif-display tabular-nums text-lg font-semibold text-fg">{value}</span>
+        </span>
+        <span aria-hidden="true" className="pt-1 text-base text-muted transition-transform group-open:rotate-45">+</span>
+      </summary>
+      <p className="mt-3 border-t border-line pt-3 text-xs leading-relaxed text-muted">{children}</p>
+    </details>
+  );
+}
+
+function DetailedRiskMetrics({ analysis, history }) {
   const varPercent =
     analysis.portfolio_value && analysis.var_95 !== null
       ? Number(analysis.var_95) / Math.abs(Number(analysis.portfolio_value))
@@ -122,9 +175,7 @@ function DetailedRiskMetrics({ analysis }) {
   const calculatedAt = analysis.data_as_of
     ? new Date(analysis.data_as_of).toLocaleString()
     : "No current price data";
-  const affectedQuotes = (analysis.price_freshness ?? []).filter(
-    (quote) => quote.status !== "fresh"
-  );
+  const quoteFreshness = analysis.price_freshness ?? [];
 
   if (analysis.insufficient_history) {
     return (
@@ -143,14 +194,22 @@ function DetailedRiskMetrics({ analysis }) {
           not reflect their latest prices.
         </p>
       )}
-      {affectedQuotes.length > 0 && (
-        <div className="rounded-lg bg-bg px-3 py-2 text-xs text-muted">
-          <p className="font-medium text-fg">Quote freshness by holding</p>
-          <ul className="mt-1 space-y-1">
-            {affectedQuotes.map((quote) => (
+      {quoteFreshness.length > 0 && (
+        <details className="group rounded-lg bg-bg px-3 py-2 text-xs text-muted">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+            <span className="font-medium text-fg">Quote freshness by holding</span>
+            <span aria-hidden="true" className="text-base transition-transform group-open:rotate-45">+</span>
+          </summary>
+          <p className="mt-2 border-t border-line pt-2 leading-relaxed">
+            Each risk calculation uses the latest persisted quote for every holding. “Fresh” means the quote is within its asset-class threshold; equity quotes outside U.S. market hours are marked market closed instead of stale.
+          </p>
+          <ul className="mt-2 space-y-1">
+            {quoteFreshness.map((quote) => (
               <li key={quote.symbol}>
                 {quote.symbol}:{" "}
-                {quote.status === "market_closed"
+                {quote.status === "fresh"
+                  ? `fresh (${quote.age_seconds}s old; ${quote.stale_after_seconds}s threshold)`
+                  : quote.status === "market_closed"
                   ? "market closed — using the latest regular-session quote"
                   : quote.status === "missing"
                     ? "no persisted quote is available"
@@ -158,39 +217,25 @@ function DetailedRiskMetrics({ analysis }) {
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       )}
 
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-lg bg-primary-soft/45 px-3 py-2.5">
-          <p className="text-xs text-muted">One-period 95% VaR</p>
-          <p className="mt-1 font-serif-display tabular-nums text-lg font-semibold text-fg">
-            {formatMoney(analysis.var_95)}
-            {varPercent !== null && (
-              <span className="ml-2 text-sm font-medium text-muted">
-                / {formatPct(varPercent)}
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="rounded-lg bg-bg px-3 py-2.5">
-          <p className="text-xs text-muted">Historical VaR</p>
-          <p className="mt-1 font-semibold tabular-nums text-fg">
-            {formatMoney(analysis.historical_var_95)}
-          </p>
-        </div>
-        <div className="rounded-lg bg-bg px-3 py-2.5">
-          <p className="text-xs text-muted">Expected shortfall</p>
-          <p className="mt-1 font-semibold tabular-nums text-fg">
-            {formatMoney(analysis.expected_shortfall_95)}
-          </p>
-        </div>
-        <div className="rounded-lg bg-bg px-3 py-2.5">
-          <p className="text-xs text-muted">Volatility</p>
-          <p className="mt-1 font-semibold tabular-nums text-fg">
-            {formatPct(analysis.volatility)}
-          </p>
-        </div>
+        <RiskMetricDetails
+          label="One-period 95% VaR"
+          value={`${formatMoney(analysis.var_95)}${varPercent !== null ? ` / ${formatPct(varPercent)}` : ""}`}
+        >
+          This is the modelled one-period loss threshold at 95% confidence, calculated as 1.645 × current volatility × absolute portfolio value. {metricChange(history, "var_95", formatMoney)} {recentTradeContext(history)}
+        </RiskMetricDetails>
+        <RiskMetricDetails label="Historical VaR" value={formatMoney(analysis.historical_var_95)}>
+          This is the loss at the 95% tail cutoff of the observed aligned portfolio-return sample. It is based on actual persisted return outcomes rather than the parametric volatility formula. Historical VaR and expected shortfall are calculated live; prior values are not stored in the current snapshot history. {recentTradeContext(history)}
+        </RiskMetricDetails>
+        <RiskMetricDetails label="Expected shortfall" value={formatMoney(analysis.expected_shortfall_95)}>
+          This is the average loss among the worst observed 5% of aligned return outcomes. It answers “how severe were the tail losses?” rather than only identifying the cutoff. It is calculated live; prior expected-shortfall values are not stored in the current snapshot history. {recentTradeContext(history)}
+        </RiskMetricDetails>
+        <RiskMetricDetails label="Volatility" value={formatPct(analysis.volatility)}>
+          Volatility is the standard deviation of aligned observed portfolio returns in the current risk window. {volatilityExplanation(analysis, history)}
+        </RiskMetricDetails>
       </div>
 
       <div className="grid gap-3 border-t border-line pt-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,1fr)]">
@@ -322,7 +367,7 @@ export default function RiskPanel() {
 
       {!notFound && analysis && (
         <>
-          <DetailedRiskMetrics analysis={analysis} />
+          <DetailedRiskMetrics analysis={analysis} history={history} />
 
           {!analysis.insufficient_history && snapshot?.explanation && (
             <p className="mt-3 text-xs leading-relaxed text-muted">
