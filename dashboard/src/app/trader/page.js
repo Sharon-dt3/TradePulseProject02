@@ -14,7 +14,10 @@ import PositionsTable from "@/components/features/PositionsTable";
 import TradesTable from "@/components/features/TradesTable";
 import TransactionsTable from "@/components/features/TransactionsTable";
 import MarketPricesTable from "@/components/features/MarketPricesTable";
-import MarketPriceSparklines from "@/components/features/MarketPriceSparklines";
+import MarketPriceSparklines, {
+  PriceTrendChart,
+  TRACKED_MARKET_SYMBOLS,
+} from "@/components/features/MarketPriceSparklines";
 import StatementForm from "@/components/features/StatementForm";
 import RiskPanel from "@/components/features/RiskPanel";
 import TabBar from "@/components/ui/TabBar";
@@ -80,6 +83,40 @@ function TodaySummary({ account, orders, positions, prices, onReviewOpenOrders, 
         ))}
       </div>
     </section>
+  );
+}
+
+function MarketPulseCard({ symbol, quote, points }) {
+  const first = points[0]?.price;
+  const changePercent =
+    first != null && quote?.price != null && Number(first) !== 0
+      ? ((Number(quote.price) - Number(first)) / Number(first)) * 100
+      : null;
+  const stale = quote ? quote.ageMs > 30000 : false;
+
+  return (
+    <Link
+      href="/markets"
+      className="rounded-lg border border-line bg-bg p-3 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[var(--shadow-card)]"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-mono text-sm font-semibold text-fg">{symbol}</p>
+          <p className="mt-1 font-serif-display tabular-nums text-lg font-semibold text-fg">
+            {quote ? formatMoney(quote.price) : "—"}
+          </p>
+        </div>
+        <span className={`text-xs font-medium ${changePercent > 0 ? "text-success" : changePercent < 0 ? "text-danger" : "text-muted"}`}>
+          {changePercent == null ? "—" : `${changePercent > 0 ? "+" : ""}${changePercent.toFixed(2)}%`}
+        </span>
+      </div>
+      <div className="mt-2">
+        <PriceTrendChart symbol={symbol} points={points} />
+      </div>
+      <p className={`mt-2 text-xs ${stale ? "text-warning" : "text-muted"}`}>
+        {!quote ? "Awaiting first quote" : stale ? `Last quote ${Math.round(quote.ageMs / 1000)}s ago` : "Live quote"}
+      </p>
+    </Link>
   );
 }
 
@@ -182,23 +219,20 @@ function TraderWorkspace() {
             </button>
           </div>
         </Card>
-        <Card title="Market pulse" className="xl:col-span-2">
+        <Card title="Market pulse" action={<span className="text-xs text-muted">live quote monitor</span>} className="xl:col-span-2">
           {!marketPrices ? (
             <div className="grid grid-cols-3 gap-3">
               {Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg bg-line/60" />)}
             </div>
-          ) : marketPrices.length === 0 ? (
-            <p className="text-sm text-muted">No quotes are available yet. Market cards will appear when the configured feed sends data.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {marketPrices.slice(0, 6).map((quote) => (
-                <Link key={quote.symbol} href="/markets" className="rounded-lg border border-line bg-bg p-3 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]">
-                  <p className="font-mono text-sm font-semibold text-fg">{quote.symbol}</p>
-                  <p className="mt-1 font-serif-display tabular-nums text-lg font-semibold text-fg">{formatMoney(quote.price)}</p>
-                  <p className={`mt-1 text-xs ${quote.ageMs > 30000 ? "text-warning" : "text-muted"}`}>
-                    {quote.ageMs > 30000 ? "Quote may be stale" : `${Math.round(quote.ageMs / 1000)}s ago`}
-                  </p>
-                </Link>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {TRACKED_MARKET_SYMBOLS.map((symbol) => (
+                <MarketPulseCard
+                  key={symbol}
+                  symbol={symbol}
+                  quote={marketPrices.find((quote) => quote.symbol === symbol)}
+                  points={marketHistory[symbol] ?? []}
+                />
               ))}
             </div>
           )}
