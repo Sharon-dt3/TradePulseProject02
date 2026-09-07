@@ -1,10 +1,10 @@
 "use client";
 
 const VARIANTS = {
-  primary: "bg-primary text-primary-fg hover:bg-[#6ae6d5] shadow-[0_5px_16px_rgba(45,212,191,0.16)]",
-  secondary: "border border-line bg-[#16243a] text-fg hover:border-[#3a587b] hover:bg-[#1b2d47]",
-  danger: "bg-danger text-[#260710] hover:bg-[#ff9aa2] shadow-sm",
-  ghost: "text-fg hover:bg-[#17243a]",
+  primary: "bg-primary text-primary-fg hover:bg-[#006b61] shadow-sm",
+  secondary: "border border-line bg-surface text-fg hover:border-[#afbfce] hover:bg-[#f4f6f8]",
+  danger: "bg-danger text-white hover:bg-[#96203a] shadow-sm",
+  ghost: "text-fg hover:bg-[#edf1f4]",
 };
 
 export default function Button({
@@ -20,7 +20,7 @@ export default function Button({
   return (
     <button
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${sizeCls} ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-md font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${sizeCls} ${VARIANTS[variant]} ${className}`}
       {...props}
     >
       {loading && (

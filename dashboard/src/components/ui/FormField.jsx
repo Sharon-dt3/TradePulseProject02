@@ -1,7 +1,7 @@
 export default function FormField({ label, error, children, hint }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1.5 block text-[0.66rem] font-bold uppercase tracking-[0.09em] text-muted">
+      <span className="mb-1.5 block text-[0.66rem] font-bold uppercase tracking-[0.09em] text-[#405169]">
         {label}
       </span>
       {children}
@@ -12,4 +12,4 @@ export default function FormField({ label, error, children, hint }) {
 }
 
 export const inputCls =
-  "w-full rounded-lg border border-line bg-[#0b1628] px-3 py-2.5 text-sm text-fg placeholder:text-[#687994] outline-none transition-[border-color,box-shadow] focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-md border border-line bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-[#8290a2] outline-none transition-[border-color,box-shadow] focus:border-primary focus:ring-2 focus:ring-primary/15";

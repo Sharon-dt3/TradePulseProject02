@@ -21,8 +21,8 @@ export default function AppShell({ children }) {
   const initial = user.email?.[0]?.toUpperCase() ?? "?";
   const nav = (
     <nav aria-label="Primary navigation" className="space-y-1 px-3 py-4">
-      <p className="px-3 pb-2 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-[#71809a]">
-        Workspace
+      <p className="px-3 pb-2 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-[#718097]">
+        Your workspace
       </p>
       {navItems.map((item) => {
         const active = pathname.startsWith(item.href);
@@ -33,15 +33,15 @@ export default function AppShell({ children }) {
             href={item.href}
             onClick={() => setNavOpen(false)}
             aria-current={active ? "page" : undefined}
-            className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold ${
+            className={`group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold ${
               active
-                ? "bg-[#173f43] text-[#8af4e2] shadow-[inset_0_0_0_1px_rgba(85,230,208,0.16)]"
-                : "text-[#9cacC6] hover:bg-[#17243a] hover:text-white"
+                ? "bg-[#e0f1ee] text-[#075e58]"
+                : "text-[#3f5067] hover:bg-[#edf1f4] hover:text-[#14243a]"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                active ? "bg-primary shadow-[0_0_10px_rgba(45,212,191,0.9)]" : "bg-[#51617b] group-hover:bg-[#9db0cc]"
+                active ? "bg-primary" : "bg-[#a4b0bf] group-hover:bg-[#5b6d82]"
               }`}
             />
             {item.label}
@@ -55,53 +55,53 @@ export default function AppShell({ children }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#09111f]">
+    <div className="flex min-h-screen bg-bg">
       <a
         href="#main-content"
-        className="sr-only z-[60] rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-fg focus:not-sr-only focus:absolute focus:left-4 focus:top-4"
+        className="sr-only z-[60] rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-fg focus:not-sr-only focus:absolute focus:left-4 focus:top-4"
       >
         Skip to main content
       </a>
 
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-[#1d2b43] bg-[#0b1526] md:flex">
-        <div className="border-b border-[#1d2b43] px-5 py-5">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-[#d9e0e8] bg-white md:flex">
+        <div className="border-b border-[#d9e0e8] px-5 py-5">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-fg shadow-[0_0_22px_rgba(45,212,191,0.24)]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#103b62] text-sm font-black text-white">
               T
             </span>
-            <span className="text-lg font-bold tracking-tight text-white">TradePulse</span>
+            <span className="text-lg font-bold tracking-tight text-[#14243a]">TradePulse</span>
           </div>
-          <p className="mt-2 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#71809a]">
-            Trading terminal
+          <p className="mt-2 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#718097]">
+            Investment workspace
           </p>
         </div>
         <div className="flex-1">{nav}</div>
-        <div className="m-3 rounded-lg border border-[#24404d] bg-[#0d2630] px-3 py-2.5">
-          <p className="flex items-center gap-2 text-[0.67rem] font-bold uppercase tracking-[0.08em] text-[#78e6d5]">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(45,212,191,1)]" />
+        <div className="m-3 rounded-md border border-[#d7e8e4] bg-[#f1faf8] px-3 py-2.5">
+          <p className="flex items-center gap-2 text-[0.67rem] font-bold uppercase tracking-[0.08em] text-[#17675c]">
+            <span className="h-1.5 w-1.5 rounded-full bg-success" />
             Secure session
           </p>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex min-h-14 items-center justify-between border-b border-[#1d2b43] bg-[#0d1729]/90 px-4 backdrop-blur-xl md:px-6">
+        <header className="flex min-h-14 items-center justify-between border-b border-[#d9e0e8] bg-white px-4 md:px-6">
           <button
             type="button"
             onClick={() => setNavOpen(true)}
-            className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-fg hover:border-primary/50 md:hidden"
+            className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-fg hover:bg-primary-soft md:hidden"
             aria-label="Open navigation"
             aria-expanded={navOpen}
           >
             Menu
           </button>
           <div className="hidden items-center gap-2 text-xs font-medium text-muted md:flex">
-            <span className="h-2 w-2 rounded-full bg-success shadow-[0_0_0_4px_rgba(66,211,146,0.12)]" />
-            Systems operational
+            <span className="h-2 w-2 rounded-full bg-success" />
+            Account access secured
           </div>
           <div className="flex items-center gap-3 md:ml-auto">
             <span className="hidden text-xs text-muted sm:inline">Signed in as</span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#193451] text-xs font-bold text-[#9ed1ff] ring-1 ring-[#305274]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e8f0f8] text-xs font-bold text-[#1c5d99] ring-1 ring-[#cbdae9]">
               {initial}
             </span>
             <span className="hidden max-w-48 truncate text-sm font-medium text-fg lg:inline">
@@ -110,7 +110,7 @@ export default function AppShell({ children }) {
             <button
               type="button"
               onClick={signOut}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-muted hover:bg-[#17243a] hover:text-white"
+              className="rounded-md px-2.5 py-1.5 text-sm font-semibold text-muted hover:bg-[#edf1f4] hover:text-fg"
             >
               Sign out
             </button>
@@ -119,23 +119,23 @@ export default function AppShell({ children }) {
 
         {navOpen && (
           <div
-            className="fixed inset-0 z-50 bg-[#020712]/70 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-50 bg-[#14243a]/35 backdrop-blur-sm md:hidden"
             role="dialog"
             aria-modal="true"
             aria-label="Navigation"
           >
-            <aside className="flex h-full w-72 flex-col border-r border-[#263754] bg-[#0b1526] shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#1d2b43] px-5 py-5">
+            <aside className="flex h-full w-72 flex-col border-r border-[#d9e0e8] bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#d9e0e8] px-5 py-5">
                 <div>
-                  <p className="text-lg font-bold text-white">TradePulse</p>
-                  <p className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#71809a]">
-                    Trading terminal
+                  <p className="text-lg font-bold text-[#14243a]">TradePulse</p>
+                  <p className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#718097]">
+                    Investment workspace
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setNavOpen(false)}
-                  className="rounded-lg px-2.5 py-1 text-lg text-muted hover:bg-[#17243a] hover:text-white"
+                  className="rounded-md px-2.5 py-1 text-lg text-muted hover:bg-[#edf1f4] hover:text-fg"
                   aria-label="Close navigation"
                 >
                   ×
@@ -147,7 +147,7 @@ export default function AppShell({ children }) {
         )}
 
         <main id="main-content" className="min-w-0 flex-1 overflow-x-hidden p-4 md:p-5 lg:p-6">
-          <div className="mx-auto max-w-[96rem]">{children}</div>
+          <div className="mx-auto max-w-[90rem]">{children}</div>
         </main>
       </div>
     </div>

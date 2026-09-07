@@ -180,10 +180,10 @@ function TraderWorkspace() {
     showWorkingOrders && orders ? orders.filter((order) => order.status === "WORKING") : orders;
 
   return (
-    <div>
+    <div className="trade-workspace">
       <PageHeader
-        title="Trader"
-        subtitle="A live view of your account, supported orders, and market context."
+        title="Your portfolio"
+        subtitle="Review your balance, investments, market context, and account activity."
         action={
           <Link href="/markets" className="rounded-lg border border-line bg-surface px-4 py-2 text-sm font-medium text-fg transition-colors hover:bg-primary-soft">
             Explore markets

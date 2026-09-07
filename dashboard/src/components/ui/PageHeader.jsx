@@ -6,15 +6,12 @@
  */
 export default function PageHeader({ title, subtitle, action }) {
   return (
-    <header className="mb-5 flex flex-col gap-3 border-b border-[#22324a] pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <header className="mb-5 flex flex-col gap-3 border-b border-line pb-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div className="mb-2 flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(45,212,191,0.9)]" />
-          <p className="text-[0.63rem] font-extrabold uppercase tracking-[0.16em] text-primary">
-            TradePulse terminal
-          </p>
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-[1.75rem]">
+        <p className="mb-2 text-[0.63rem] font-extrabold uppercase tracking-[0.15em] text-primary">
+          TradePulse
+        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-fg sm:text-[1.75rem]">
           {title}
         </h1>
         {subtitle && (

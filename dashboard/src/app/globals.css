@@ -3,35 +3,35 @@
 /**
  * Shared visual tokens for the TradePulse dashboard.
  *
- * The dashboard uses a dark, information-dense trading canvas. A restrained
- * cyan accent and clear semantic colors keep live financial data legible
- * without turning every surface into a competing visual element.
+ * Investor-facing pages use calm neutral surfaces, navy typography, and a
+ * restrained teal action color. Semantic colors are reserved for market
+ * movement, account health, and risk states rather than general decoration.
  */
 @theme {
-  --color-bg: #09111f;
-  --color-fg: #eaf1ff;
-  --color-surface: #101b2e;
-  --color-line: #253550;
-  --color-muted: #91a1bb;
+  --color-bg: #f4f6f8;
+  --color-fg: #14243a;
+  --color-surface: #ffffff;
+  --color-line: #d9e0e8;
+  --color-muted: #617187;
 
-  --color-primary: #2dd4bf;
-  --color-primary-fg: #041311;
-  --color-primary-soft: #123a3d;
+  --color-primary: #007c71;
+  --color-primary-fg: #ffffff;
+  --color-primary-soft: #e5f4f1;
 
-  --color-success: #42d392;
-  --color-success-bg: #103528;
-  --color-warning: #f6b84a;
-  --color-warning-bg: #3d2b0b;
-  --color-danger: #ff7b86;
-  --color-danger-bg: #421b28;
-  --color-info: #6ab7ff;
-  --color-info-bg: #102f51;
+  --color-success: #16784f;
+  --color-success-bg: #e7f6ee;
+  --color-warning: #9a5a09;
+  --color-warning-bg: #fff4df;
+  --color-danger: #b4233d;
+  --color-danger-bg: #ffedf0;
+  --color-info: #1c5d99;
+  --color-info-bg: #eaf3fb;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 
-  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.18);
-  --shadow-card-hover: 0 18px 42px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 1px 2px rgba(20, 36, 58, 0.03), 0 8px 24px rgba(20, 36, 58, 0.06);
+  --shadow-card-hover: 0 2px 6px rgba(20, 36, 58, 0.05), 0 12px 30px rgba(20, 36, 58, 0.09);
 }
 
 html,
@@ -44,10 +44,7 @@ body {
 body {
   min-height: 100%;
   color: var(--color-fg);
-  background:
-    radial-gradient(circle at 8% -10%, rgba(45, 212, 191, 0.15), transparent 28rem),
-    radial-gradient(circle at 100% 0%, rgba(85, 115, 255, 0.16), transparent 32rem),
-    linear-gradient(135deg, #07101e 0%, #0b1424 48%, #0b1020 100%);
+  background: var(--color-bg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -61,7 +58,7 @@ button,
 a,
 input,
 select {
-  transition-duration: 180ms;
+  transition-duration: 160ms;
   transition-timing-function: ease;
 }
 
@@ -79,8 +76,8 @@ a {
 }
 
 ::selection {
-  color: #031411;
-  background: #72ead9;
+  color: #ffffff;
+  background: #007c71;
 }
 
 .font-serif-display {
@@ -90,6 +87,11 @@ a {
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* Keeps active trading tools focused without using a separate application. */
+.trade-workspace {
+  --color-bg: #eef2f5;
 }
 
 @media (prefers-reduced-motion: reduce) {

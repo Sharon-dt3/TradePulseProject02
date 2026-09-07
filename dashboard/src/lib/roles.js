@@ -42,10 +42,10 @@ export const ALL_ROLES = [
  * page that would only ever show empty/broken state.
  */
 export const NAV_ITEMS = [
-  { role: "trader", href: "/trader", label: "Trader" },
+  { role: "trader", href: "/trader", label: "Overview" },
   { role: "trader", href: "/markets", label: "Markets" },
-  { role: "viewer", href: "/viewer", label: "Viewer" },
-  { role: "delegated_viewer", href: "/viewer", label: "Viewer" },
+  { role: "viewer", href: "/viewer", label: "Investments" },
+  { role: "delegated_viewer", href: "/viewer", label: "Investments" },
   { role: "compliance", href: "/compliance", label: "Compliance" },
   { role: "risk_manager", href: "/risk", label: "Risk" },
   { role: "admin", href: "/admin", label: "Admin" },
