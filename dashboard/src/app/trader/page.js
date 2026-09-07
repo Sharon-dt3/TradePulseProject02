@@ -183,11 +183,22 @@ function TraderWorkspace() {
   const handleReviewOpenOrders = () => {
     setShowWorkingOrders(true);
     setTab("Orders");
+    requestAnimationFrame(() => {
+      document.getElementById("activity-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const handleSelectTab = (nextTab) => {
     setShowWorkingOrders(false);
     setTab(nextTab);
+  };
+
+  const handleReviewPositions = () => {
+    setShowWorkingOrders(false);
+    setTab("Positions");
+    requestAnimationFrame(() => {
+      document.getElementById("activity-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const displayedOrders =
@@ -224,15 +235,41 @@ function TraderWorkspace() {
 
       <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card title="Quick actions" className="xl:col-span-1">
-          <div className="space-y-2">
-            <a href="#place-order" className="block rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-fg transition-opacity hover:opacity-90">
-              Buy or sell a supported symbol
+          <div className="grid gap-2.5">
+            <a
+              href="#place-order"
+              className="group flex items-center gap-3 rounded-xl bg-gradient-to-r from-[#4f46e5] to-[#635bdf] px-3.5 py-3.5 text-primary-fg shadow-[0_8px_18px_rgba(79,70,229,0.2)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(79,70,229,0.28)]"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/18 text-lg font-semibold">↗</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold">Place an order</span>
+                <span className="mt-0.5 block text-xs text-white/75">Buy or sell a supported symbol</span>
+              </span>
+              <span className="text-lg text-white/80 transition-transform group-hover:translate-x-0.5">→</span>
             </a>
-            <button type="button" onClick={handleReviewOpenOrders} className="block w-full rounded-lg border border-line px-4 py-3 text-left text-sm font-medium text-fg transition-colors hover:bg-primary-soft">
-              Review open orders
+            <button
+              type="button"
+              onClick={handleReviewOpenOrders}
+              className="group flex w-full items-center gap-3 rounded-xl border border-[#f0d7a7] bg-gradient-to-r from-[#fffaf0] to-[#fff5e1] px-3.5 py-3.5 text-left transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-[#e5bb6d] hover:shadow-md"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#fff0cf] text-lg font-semibold text-[#9a5a12]">◷</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-[#70400c]">Review open orders</span>
+                <span className="mt-0.5 block text-xs text-[#9a6c31]">Focus on active instructions</span>
+              </span>
+              <span className="text-lg text-[#b67a25] transition-transform group-hover:translate-x-0.5">→</span>
             </button>
-            <button type="button" onClick={() => handleSelectTab("Positions")} className="block w-full rounded-lg border border-line px-4 py-3 text-left text-sm font-medium text-fg transition-colors hover:bg-primary-soft">
-              View holdings
+            <button
+              type="button"
+              onClick={handleReviewPositions}
+              className="group flex w-full items-center gap-3 rounded-xl border border-[#c9e6dc] bg-gradient-to-r from-[#f0fbf7] to-[#e6f8f2] px-3.5 py-3.5 text-left transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-[#83c7ae] hover:shadow-md"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#d8f3e9] text-lg font-semibold text-[#18794e]">▣</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-[#155d3e]">View holdings</span>
+                <span className="mt-0.5 block text-xs text-[#347a60]">Inspect your current positions</span>
+              </span>
+              <span className="text-lg text-[#27805d] transition-transform group-hover:translate-x-0.5">→</span>
             </button>
           </div>
         </Card>
@@ -266,21 +303,23 @@ function TraderWorkspace() {
         </Card>
       </div>
 
-      <Card>
-        <TabBar tabs={TABS} active={tab} onChange={handleSelectTab} />
-        {tab === "Orders" && (
-          <OrdersTable
-            orders={displayedOrders}
-            loading={orders === null}
-            onCancel={handleCancel}
-          />
-        )}
-        {tab === "Positions" && (
-          <PositionsTable positions={positions} prices={marketPrices ?? []} loading={positions === null} />
-        )}
-        {tab === "Trades" && <TradesTable trades={trades} loading={trades === null} />}
-        {tab === "Transactions" && <TransactionsTable />}
-      </Card>
+      <div id="activity-workspace" className="scroll-mt-6">
+        <Card>
+          <TabBar tabs={TABS} active={tab} onChange={handleSelectTab} />
+          {tab === "Orders" && (
+            <OrdersTable
+              orders={displayedOrders}
+              loading={orders === null}
+              onCancel={handleCancel}
+            />
+          )}
+          {tab === "Positions" && (
+            <PositionsTable positions={positions} prices={marketPrices ?? []} loading={positions === null} />
+          )}
+          {tab === "Trades" && <TradesTable trades={trades} loading={trades === null} />}
+          {tab === "Transactions" && <TransactionsTable />}
+        </Card>
+      </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card title="Generate statement">
