@@ -122,6 +122,9 @@ function DetailedRiskMetrics({ analysis }) {
   const calculatedAt = analysis.data_as_of
     ? new Date(analysis.data_as_of).toLocaleString()
     : "No current price data";
+  const affectedQuotes = (analysis.price_freshness ?? []).filter(
+    (quote) => quote.status !== "fresh"
+  );
 
   if (analysis.insufficient_history) {
     return (
@@ -136,8 +139,26 @@ function DetailedRiskMetrics({ analysis }) {
     <div className="space-y-3">
       {analysis.price_data_stale && (
         <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-          Market data is stale. Risk estimates use prices last observed at {calculatedAt}.
+          Stale market data: {analysis.stale_symbols.join(", ")}. Risk estimates may
+          not reflect their latest prices.
         </p>
+      )}
+      {affectedQuotes.length > 0 && (
+        <div className="rounded-lg bg-bg px-3 py-2 text-xs text-muted">
+          <p className="font-medium text-fg">Quote freshness by holding</p>
+          <ul className="mt-1 space-y-1">
+            {affectedQuotes.map((quote) => (
+              <li key={quote.symbol}>
+                {quote.symbol}:{" "}
+                {quote.status === "market_closed"
+                  ? "market closed — using the latest regular-session quote"
+                  : quote.status === "missing"
+                    ? "no persisted quote is available"
+                    : `stale (${quote.age_seconds}s old; ${quote.stale_after_seconds}s threshold)`}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <div className="rounded-lg bg-primary-soft/45 px-3 py-2">

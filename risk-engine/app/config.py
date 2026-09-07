@@ -61,7 +61,9 @@ class Settings(BaseSettings):
     # their concentration and data-freshness policy explicit and tunable.
     risk_history_snapshot_limit: int = 288  # env: RISK_HISTORY_SNAPSHOT_LIMIT
     risk_concentration_warning_pct: Decimal = Decimal("0.50")  # env: RISK_CONCENTRATION_WARNING_PCT
-    risk_price_stale_after_seconds: int = 30  # env: RISK_PRICE_STALE_AFTER_SECONDS
+    risk_crypto_symbols: str = "BTCUSD"  # env: RISK_CRYPTO_SYMBOLS
+    risk_crypto_price_stale_after_seconds: int = 30  # env: RISK_CRYPTO_PRICE_STALE_AFTER_SECONDS
+    risk_equity_price_stale_after_seconds: int = 900  # env: RISK_EQUITY_PRICE_STALE_AFTER_SECONDS
 
     # Phase 17: GET /risk/aggregate's high-risk account flag. An
     # account is high-risk when its one-day 95% VaR exceeds this
@@ -103,6 +105,17 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"risk_history_snapshot_limit must be at least 20, got {value}"
             )
+        return value
+
+    @field_validator(
+        "risk_crypto_price_stale_after_seconds",
+        "risk_equity_price_stale_after_seconds",
+    )
+    @classmethod
+    def enforce_positive_freshness_threshold(cls, value: int) -> int:
+        """Reject non-positive stale-data thresholds at service startup."""
+        if value <= 0:
+            raise ValueError("risk price stale thresholds must be greater than zero")
         return value
 
     class Config:

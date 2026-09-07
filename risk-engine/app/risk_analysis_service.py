@@ -1,14 +1,19 @@
 """Account-scoped detailed and projected portfolio risk analysis."""
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
 from app import positions_repository, price_history_repository
 from app.config import settings
 from app.risk_calculator import InsufficientPriceHistory, compute_portfolio_risk_analysis
+
+NEW_YORK_TIMEZONE = ZoneInfo("America/New_York")
+EQUITY_MARKET_OPEN = time(9, 30)
+EQUITY_MARKET_CLOSE = time(16, 0)
 
 
 def _price_history_for_positions(
@@ -23,19 +28,98 @@ def _price_history_for_positions(
     }
 
 
-def _freshness_metadata(history: dict[str, list]) -> dict:
-    """Return the oldest latest quote across held symbols as portfolio freshness."""
-    latest_observations = [points[-1][0] for points in history.values() if points]
-    if not latest_observations:
-        return {"data_as_of": None, "price_data_stale": True}
-
-    data_as_of = min(latest_observations)
-    if data_as_of.tzinfo is None:
-        data_as_of = data_as_of.replace(tzinfo=timezone.utc)
-    age_seconds = max(0, (datetime.now(timezone.utc) - data_as_of).total_seconds())
+def _crypto_symbols() -> set[str]:
+    """Return the configured comma-separated crypto symbols in normalized form."""
     return {
-        "data_as_of": data_as_of,
-        "price_data_stale": age_seconds > settings.risk_price_stale_after_seconds,
+        symbol.strip().upper()
+        for symbol in settings.risk_crypto_symbols.split(",")
+        if symbol.strip()
+    }
+
+
+def _is_equity_market_open(now: datetime) -> bool:
+    """Return whether the standard U.S. equity session is currently open.
+
+    Exchange holidays and special sessions are not modelled here; a feed-health
+    integration can refine this schedule later without changing quote semantics.
+    """
+    new_york_now = now.astimezone(NEW_YORK_TIMEZONE)
+    return (
+        new_york_now.weekday() < 5
+        and EQUITY_MARKET_OPEN <= new_york_now.time() < EQUITY_MARKET_CLOSE
+    )
+
+
+def _as_utc(observed_at: datetime) -> datetime:
+    """Normalize persisted price timestamps to timezone-aware UTC datetimes."""
+    if observed_at.tzinfo is None:
+        return observed_at.replace(tzinfo=timezone.utc)
+    return observed_at.astimezone(timezone.utc)
+
+
+def _freshness_metadata(history: dict[str, list]) -> dict:
+    """Return transparent, per-symbol quote freshness for held positions."""
+    now = datetime.now(timezone.utc)
+    crypto_symbols = _crypto_symbols()
+    equity_market_open = _is_equity_market_open(now)
+    price_freshness = []
+
+    for symbol, points in history.items():
+        is_crypto = symbol.upper() in crypto_symbols
+        asset_class = "crypto" if is_crypto else "equity"
+        threshold_seconds = (
+            settings.risk_crypto_price_stale_after_seconds
+            if is_crypto
+            else settings.risk_equity_price_stale_after_seconds
+        )
+
+        if not points:
+            price_freshness.append(
+                {
+                    "symbol": symbol,
+                    "asset_class": asset_class,
+                    "data_as_of": None,
+                    "age_seconds": None,
+                    "stale_after_seconds": threshold_seconds,
+                    "status": "missing",
+                    "is_stale": True,
+                }
+            )
+            continue
+
+        data_as_of = _as_utc(points[-1][0])
+        age_seconds = max(0, int((now - data_as_of).total_seconds()))
+        market_closed = not is_crypto and not equity_market_open
+        is_stale = not market_closed and age_seconds > threshold_seconds
+        price_freshness.append(
+            {
+                "symbol": symbol,
+                "asset_class": asset_class,
+                "data_as_of": data_as_of,
+                "age_seconds": age_seconds,
+                "stale_after_seconds": threshold_seconds,
+                "status": (
+                    "market_closed"
+                    if market_closed
+                    else "stale"
+                    if is_stale
+                    else "fresh"
+                ),
+                "is_stale": is_stale,
+            }
+        )
+
+    stale_symbols = [
+        quote["symbol"] for quote in price_freshness if quote["is_stale"]
+    ]
+    available_quotes = [
+        quote["data_as_of"] for quote in price_freshness if quote["data_as_of"]
+    ]
+    return {
+        "data_as_of": min(available_quotes) if available_quotes else None,
+        "price_data_stale": bool(stale_symbols),
+        "stale_symbols": stale_symbols,
+        "price_freshness": price_freshness,
     }
 
 
@@ -65,7 +149,8 @@ def _analyze(
         "horizon": "one observed return period",
         "price_history_window": settings.price_history_window,
         "covariance_model": "sample covariance from aligned persisted returns",
-        "stale_after_seconds": settings.risk_price_stale_after_seconds,
+        "crypto_stale_after_seconds": settings.risk_crypto_price_stale_after_seconds,
+        "equity_stale_after_seconds": settings.risk_equity_price_stale_after_seconds,
     }
     analysis["concentration_warning"] = bool(
         analysis["concentration_pct"] is not None
