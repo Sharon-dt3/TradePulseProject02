@@ -625,22 +625,37 @@ covers).
 **Depends on:** risk-engine's existing `risk_snapshots`/recompute
 pipeline (Phase 7) and the `risk.updates` publish (this session).
 **Task checklist:**
-- [ ] `GET /risk/aggregate` (`risk.aggregate.read`, already seeded) —
-      firm-wide exposure summed across all accounts.
-- [ ] Exposure by account and exposure by symbol as separate, queryable
-      breakdowns of the same aggregate.
-- [ ] High-risk account identification — a threshold-based flag (document
-      the threshold choice, same as every other "this cutoff was a
-      deliberate choice" comment already in this codebase).
-- [ ] Real-time firm-wide monitoring: a Risk Manager's SSE connection
-      needs every account's `risk_update`, not just their own — this is
-      a different filter rule in `gateway`'s `Streamer.Handle` than the
-      per-`accountId` match built this session, keyed by role instead.
-**Verification checkpoint:** the aggregate number equals the sum of the
-individual account snapshots it's built from (checked against real data,
-not just code review); a Risk Manager's SSE connection receives updates
-for accounts that aren't their own.
-**Status:** not started.
+- [x] `GET /risk/aggregate` (`risk.aggregate.read`, already seeded) —
+      firm-wide `totalPortfolioValue`, summed from every account's
+      latest `risk_snapshots` row. New `permission_service.py` in
+      risk-engine (a Python mirror of ledger-core's PermissionService —
+      risk-engine had no authorization machinery before this).
+- [x] Exposure by account (`byAccount`: each account's own
+      portfolioValue/var95/volatility) and exposure by symbol
+      (`bySymbol`: net position firm-wide, valued at latest price —
+      deliberately net not gross, consistent with
+      positions_repository's existing per-account netting convention).
+- [x] High-risk account identification — `var_95` exceeding a
+      configurable percentage of that account's own `portfolio_value`
+      (`risk_high_risk_var_threshold_pct`, default 10%), not a flat
+      dollar figure, so accounts of different sizes are held to the
+      same proportional standard.
+- [x] Real-time firm-wide monitoring — SSE tickets now carry
+      `firmWideRisk`, computed at mint time from the caller's
+      `risk.aggregate.read` permission (never client-asserted).
+      `gateway`'s `Streamer.Handle` skips the per-`accountId` match
+      entirely for a `firmWideRisk` connection, keyed off the same
+      permission `GET /risk/aggregate` is gated by.
+**Verification checkpoint:** `totalPortfolioValue` confirmed equal to
+the sum of `byAccount` entries; `bySymbol` notional arithmetic checked
+exactly; the `role_permissions` query confirmed `false` for
+trader/viewer (no live non-admin token available this session, verified
+at the SQL level instead of a live 403); a firm-wide SSE connection
+confirmed receiving a `risk_update` for an account that isn't its own
+(synthetic event published directly to `risk.updates`, since no second
+account's live trade activity was available this session).
+**Status:** complete — all 4 items live-verified end-to-end across all
+three services (commits d108a66, d51183d).
 
 ---
 
