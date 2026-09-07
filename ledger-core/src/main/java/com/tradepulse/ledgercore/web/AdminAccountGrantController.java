@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,6 +35,16 @@ public class AdminAccountGrantController {
 
     public AdminAccountGrantController(AccountGrantService accountGrantService) {
         this.accountGrantService = accountGrantService;
+    }
+
+    @GetMapping("/accounts/{accountId}/grants")
+    public ResponseEntity<List<AccountGrantDto>> listGrantsForAccount(
+            @PathVariable UUID accountId, Authentication authentication) {
+        List<String> roles = rolesOf(authentication);
+        List<AccountGrantDto> grants = accountGrantService.listGrantsForAccount(roles, accountId).stream()
+                .map(this::toDto)
+                .toList();
+        return ResponseEntity.ok(grants);
     }
 
     @PostMapping("/accounts/{accountId}/grants")

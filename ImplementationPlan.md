@@ -788,19 +788,260 @@ everything.
 ## Phase 20 — Dashboard: a real UI for every role
 
 **Depends on:** Phases 12-19 (each role's view is only as real as its
-backend).
-**Task checklist:**
-- [ ] Replace the current plain-HTML-table look with an actual designed
-      interface — layout, typography, color, real components — not just
-      more tables.
-- [ ] A distinct view per role: Trader (polish the existing Orders page),
-      Viewer, Compliance, Risk Manager, Admin, Support, Auditor — each
-      wired to its own phase's endpoints above, showing only what that
-      role can see.
-- [ ] Role-aware navigation — a user only ever sees entry points to
-      views their own roles unlock.
-**Verification checkpoint:** sign in as one test user per role, confirm
-each sees only its own view and only the data its permissions allow —
-this is the dashboard-side echo of every RLS/permission check built in
-Phases 12-19.
+backend). This pass covers Viewer(13)/Admin(18)/Risk Manager(17)/
+Compliance(14)/Trader-polish — the phases actually built. Support(15),
+Auditor(16), and Statements(19) views are deferred until those backends
+exist; the nav/shell below is built so adding them later is just a new
+route + nav entry, not a rearchitecture.
+
+### Phase 20.0 — Backend prerequisites (found while planning the UI)
+
+Two real gaps surfaced: Admin held `accounts.freeze` (can freeze blindly
+by ID) but never `account.read.any` (only compliance got that in Phase
+14 item 3), so an Admin screen showing account details before acting on
+one would 404; and there was no account directory anywhere - Admin/
+Compliance would need a UUID handed to them out of band to look
+anything up, and `account.grant.manage`'s revoke had no way to discover
+a `grantId` either. Fixed as three small, convention-following additions
+(no new permissions beyond one reuse):
+- [x] `V31__admin_account_read_any_permission.sql` - seeds
+      `account.read.any` to admin.
+- [x] `GET /accounts` - the account directory (new `AccountSummaryDto`:
+      accountId, ownerUserId, ownerEmail, cashBalance, marginEnabled,
+      frozen), gated on `account.read.any` - the exact permission the
+      any-tier already checks, not a new one.
+- [x] `GET /admin/accounts/{accountId}/grants` - lists grants for an
+      account, gated on the existing `account.grant.manage` (same
+      permission issue/revoke already use).
+**Status:** complete — live-verified: compliance's GET /accounts
+returns all 3 accounts with owner emails joined correctly; admin token
+(new admin.test@tradepulse.internal, admin role) confirmed on all
+three - directory (200), GET /accounts/{accountId} for an account admin
+doesn't own (200, previously would have 404 before V31), and grants-list
+(200, showing 4 historical grants from Phase 13 testing).
+
+### Phase 20.1 — Foundation
+
+- [ ] Install Tailwind CSS (`tailwindcss @tailwindcss/postcss postcss`),
+      wire into `postcss.config.mjs`, replace `globals.css` with a
+      `@import "tailwindcss"` + design tokens (`@theme` block: color
+      palette, font stack, radii, shadows) - no `tailwind.config.js`
+      needed under Tailwind v4's CSS-first config.
+- [ ] Design tokens: a small neutral/slate base palette plus one accent
+      per semantic meaning (not per role) - success/green for
+      FILLED/live, warning/amber for pending/rejected-benign, danger/red
+      for frozen/rejected-hard, info/blue for links/live-indicators.
+      Dark-mode aware via `prefers-color-scheme` from the start, since
+      every other artifact in this session has been.
+- [ ] Shared component library under `src/components/ui/`: `Button`,
+      `Card`, `Badge` (status pills - FILLED/REJECTED/frozen/live),
+      `DataTable` (sortable columns, empty state, loading skeleton),
+      `FormField` (label+input+error, used by every form in every role),
+      `Modal` (freeze/unfreeze reason prompts, grant-issue form, role
+      picker), `Toast`/inline `Alert` (replaces today's raw `{error &&
+      <p style={{color:'red'}}>}`), `LiveDot` (the existing
+      `● live`/`○ connecting...` indicator, componentized), `PageHeader`
+      (title + breadcrumb + primary action slot).
+- [ ] `src/lib/api/client.js`: generalize beyond `ledgerCoreFetch` -
+      add `riskEngineFetch` (base URL `NEXT_PUBLIC_RISK_ENGINE_URL`,
+      same auth-header/error-shape handling) since Risk Manager and the
+      live-risk panel both need risk-engine directly, not just
+      ledger-core.
+- [ ] `AuthContext`: currently exposes only `session`/`user` - add
+      `roles` (decoded from the JWT's `user_role` claim,
+      `session.access_token` split/base64-decoded, no extra network
+      call) since every role-gated nav item and page guard needs this
+      and nothing today reads it.
+- [ ] `src/components/RequireRole.jsx`: wraps a page, redirects to `/`
+      (or a 403 screen) if the signed-in user's `roles` doesn't include
+      at least one of the page's required roles - the client-side echo
+      of every backend permission check, not a replacement for it (the
+      backend still 403s regardless; this just avoids showing a page
+      that will only error).
+- [ ] App shell (`src/app/layout.js` + a new `src/components/AppShell.jsx`):
+      persistent sidebar nav (role-aware - only renders links for roles
+      the user holds), top bar (signed-in email, sign-out), main content
+      area. Replaces the current bare `{children}` layout.
+- [ ] Route structure: `/trader`, `/viewer`, `/admin`, `/risk`,
+      `/compliance` as top-level route segments (existing `/orders`
+      becomes `/trader`, redirected for compatibility). `/` becomes a
+      landing/sign-in page that, once authenticated, redirects to the
+      first role-appropriate route rather than showing a raw JSON debug
+      dump (today's `authHeaders()` button/`<pre>` dump is dev-only
+      scaffolding, gets removed).
+**Verification checkpoint:** `npm run dev` renders the shell with
+correct light/dark tokens and no console errors; sign in as
+`testtrader@gmail.com` (trader+compliance) and confirm the nav shows
+exactly Trader + Compliance links, nothing else.
+**Status:** not started.
+
+### Phase 20.2 — Viewer view (`/viewer`)
+
+Endpoints: `GET /accounts/me` (own account summary); `GET /positions`,
+`GET /trades`, `GET /orders` (own, bare paths) as the default view; a
+"switch account" field for granted access, hitting
+`GET /accounts/{accountId}`, `/accounts/{accountId}/positions`,
+`/trades`, `/orders` instead once an accountId is entered. **Known
+limitation, called out in the UI, not hidden:** there is no
+self-service "list accounts granted to me" endpoint yet (Phase 13/15
+never built one), so a Viewer with delegated access needs to be told
+the accountId out of band - a manual input field with a clear caption,
+not a silent dead end.
+- [ ] Account summary card: cash balance, margin-enabled badge, frozen
+      banner (red, prominent - "This account is frozen" - if
+      `frozen:true`, since Viewer can still read a frozen account, just
+      not trade it).
+- [ ] Tabs: Positions / Trades / Orders, each a `DataTable` off the
+      corresponding endpoint.
+- [ ] Account-switch input + validation (invalid/unauthorized accountId
+      surfaces the backend's exact `ACCOUNT_NOT_FOUND` message via
+      `Alert`, not a generic failure).
+**Verification checkpoint:** sign in as a viewer-role test user, confirm
+own-account tabs populate; if a grant exists from earlier phases, switch
+to the granted account and confirm the same tabs now show its data;
+switch to a random UUID and confirm a clean "not found" message, not a
+crash.
+**Status:** not started.
+
+### Phase 20.3 — Admin view (`/admin`)
+
+Endpoints: `GET /accounts` (directory, NEW), `GET /accounts/{accountId}`
+(any-tier, NEW as of V31), `GET /admin/users`,
+`POST`/`DELETE /admin/users/{userId}/roles/{role}`,
+`POST /admin/accounts/{accountId}/grants`, `DELETE /admin/grants/{grantId}`,
+`GET /admin/accounts/{accountId}/grants` (NEW),
+`POST /admin/accounts/{accountId}/audit-engagements`,
+`GET /admin/audit-log`, `POST /accounts/{accountId}/freeze`/`/unfreeze`.
+- [ ] Sub-nav within `/admin`: Users / Accounts / Audit Log.
+- [ ] **Users tab:** `DataTable` off `GET /admin/users` (email, role
+      badges); each row expands to add/remove-role controls (`Modal`
+      with a role `<select>` from the 8 valid roles, calling
+      `POST`/`DELETE .../roles/{role}`).
+- [ ] **Accounts tab:** `DataTable` off `GET /accounts` (owner email,
+      balance, frozen badge); row actions: Freeze/Unfreeze (`Modal`
+      prompting for the mandatory reason, calling
+      `POST .../freeze`/`/unfreeze`), View (drill into a detail panel
+      showing positions/trades/orders via the any-tier reads, plus a
+      Grants sub-panel: list via `GET .../grants`, issue via a form
+      (userId picked from the Users tab's data, purpose select limited
+      to `delegated_viewer`/`support`, reason, expiry date-time picker),
+      revoke via a button per row calling `DELETE /admin/grants/{grantId}`),
+      and an audit-engagement form (auditor userId, reason, date range)
+      calling `POST .../audit-engagements`.
+- [ ] **Audit Log tab:** `DataTable` off `GET /admin/audit-log`, an
+      `entityType` filter `<select>` (populated from the distinct
+      values already seen in the loaded page, e.g. account/order/trade/
+      LEDGER_ADJUSTMENT/compliance_case - a live echo of the
+      inconsistent casing convention already in the data, not something
+      to paper over), each row's `details` JSON shown in a expandable
+      `<pre>` rather than a raw inline dump.
+**Verification checkpoint:** sign in as `phase10admin2@gmail.com` (or
+reset its password first), confirm all three tabs populate; freeze a
+test account through the UI and confirm the Accounts tab's badge
+updates; issue a grant through the UI and confirm it appears in that
+account's Grants sub-panel, then revoke it and confirm it disappears
+(or shows revoked/expired).
+**Status:** not started.
+
+### Phase 20.4 — Risk Manager view (`/risk`)
+
+Endpoints: `GET /risk/aggregate` (risk-engine) - the entire view;
+`risk_manager` holds no other permission, so there's no drill-down
+endpoint to wire beyond what this one response already contains
+(`byAccount` already includes per-account portfolioValue/var95/
+volatility/highRisk). Live updates via the existing SSE mechanism
+(`POST /stream/tickets` -> `firmWideRisk:true` for a caller holding
+`risk.aggregate.read` -> gateway forwards every account's
+`risk_update`, not just the caller's own).
+- [ ] Summary cards: totalPortfolioValue, accountCount,
+      highRiskAccountCount, highRiskThresholdPct.
+- [ ] `byAccount` `DataTable`, `highRisk` accounts visually flagged
+      (danger `Badge`), sortable by var95/portfolioValue.
+- [ ] `bySymbol` `DataTable`: netQuantity/latestPrice/notionalValue.
+- [ ] Live indicator (`LiveDot`) wired to the firm-wide SSE stream -
+      on a `risk_update` event for any account, patch that row in the
+      `byAccount` table in place (no full re-poll) and flash-highlight
+      it briefly so a Risk Manager watching the screen actually notices
+      a live change, not just a static-feeling number swap.
+**Verification checkpoint:** sign in as a risk_manager-role test user,
+confirm the aggregate loads; trigger a trade from another session/tab
+and confirm the corresponding row updates live without a page refresh.
+**Status:** not started.
+
+### Phase 20.5 — Compliance view (`/compliance`)
+
+Endpoints: `GET /accounts` (directory), `GET /accounts/{accountId}` +
+`/positions` + `/trades` + `/orders` (any-tier), `POST .../freeze`/
+`/unfreeze`, `GET /compliance/cases`, `POST /compliance/cases`,
+`POST /compliance/cases/{caseId}/close`, `GET /compliance/audit-log`,
+`GET /risk/aggregate` (risk-engine).
+- [ ] Sub-nav: Accounts / Cases / Audit Log / Risk.
+- [ ] **Accounts tab:** shares the same directory `DataTable` +
+      freeze/unfreeze + detail-drill component built for Admin's
+      Accounts tab (same underlying permission tier, same UI - built
+      once as a shared component, used by both role views rather than
+      duplicated).
+- [ ] **Cases tab:** open-case form (accountId, reason) ->
+      `POST /compliance/cases`; `DataTable` off `GET /compliance/cases`
+      (needs an accountId query param per the existing controller - a
+      per-account view, entered via the same account picker as the
+      Accounts tab); close-case button per open row ->
+      `POST .../cases/{caseId}/close`.
+- [ ] **Audit Log tab:** identical `DataTable`/filter UI to Admin's,
+      pointed at `GET /compliance/audit-log` instead of
+      `/admin/audit-log` (same shared component, different endpoint
+      prop - this is exactly the role-neutral-alias decision from Phase
+      14 item 5 paying off in the frontend).
+- [ ] **Risk tab:** the same aggregate view built for Risk Manager
+      (shared component), confirming item 4's permission reuse end to
+      end in the UI too.
+**Verification checkpoint:** sign in as `testtrader@gmail.com`
+(trader+compliance), confirm the Compliance nav item appears alongside
+Trader; freeze/read/case-open/audit-log/risk all work from this view
+without needing SQL or curl.
+**Status:** not started.
+
+### Phase 20.6 — Trader polish (`/trader`)
+
+The existing Orders page, rebuilt on the Phase 20.1 component library
+rather than inline styles - no new endpoints, same wiring
+(`GET`/`POST /orders`, `POST /orders/{orderId}/cancel` - cancel isn't
+in the UI today, add it), `GET /positions`, `GET /trades` (also missing
+today - the page only ever showed orders), `GET /accounts/me` (account
+summary card, including the frozen banner from 20.2 - a frozen trader
+should see clearly why their orders are being rejected, not just a
+cryptic `ACCOUNT_FROZEN` string in a table cell), live risk panel kept
+as-is functionally but rebuilt with `Card`/`Badge`/`LiveDot`.
+- [ ] Positions and Trades tabs added alongside Orders (currently
+      missing entirely from the trader's own view, despite the
+      endpoints existing since early phases).
+- [ ] Cancel button on working (non-terminal) orders ->
+      `POST /orders/{orderId}/cancel`.
+- [ ] Account summary card + frozen banner (shared component from
+      20.2/20.3).
+**Verification checkpoint:** place, view, and cancel an order through
+the rebuilt UI; freeze the trader's own account via another role's
+view (or curl) and confirm the frozen banner appears and a new order
+attempt shows a clear "account frozen" message, not a raw
+`rejectionReason: "ACCOUNT_FROZEN"` table cell.
+**Status:** not started.
+
+### Phase 20.7 — Cross-cutting polish
+
+- [ ] Loading/error states standardized across every view (skeleton
+      rows in `DataTable`, `Alert` for errors) - no more bare
+      `<p>Loading...</p>`.
+- [ ] Responsive down to a reasonable tablet width (this is an
+      internal ops tool, not consumer-mobile-first, but the sidebar
+      should collapse rather than overflow).
+- [ ] Remove the root page's dev-only `authHeaders()`/`<pre>` debug
+      dump.
+**Status:** not started.
+
+**Overall verification checkpoint:** sign in as one test user per role
+(trader, viewer, compliance, risk_manager, admin - reusing
+`testtrader@gmail.com`'s dual trader+compliance role covers two at
+once), confirm each sees only its own nav entries and only the data its
+permissions allow - the dashboard-side echo of every RLS/permission
+check built in Phases 12-19.
 **Status:** not started.

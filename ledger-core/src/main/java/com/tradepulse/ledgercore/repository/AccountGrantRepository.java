@@ -20,4 +20,7 @@ public interface AccountGrantRepository extends JpaRepository<AccountGrant, Long
      */
     boolean existsByAccountIdAndGrantedToUserIdAndPurposeInAndExpiresAtAfter(
             UUID accountId, UUID grantedToUserId, List<String> purposes, OffsetDateTime now);
+
+    /** Phase 20 prerequisite: lets Admin's grants UI list what exists for an account, so revoke has a grantId to act on. */
+    List<AccountGrant> findByAccountIdOrderByCreatedAtDesc(UUID accountId);
 }

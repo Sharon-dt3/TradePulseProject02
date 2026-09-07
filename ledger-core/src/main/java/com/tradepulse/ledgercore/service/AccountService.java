@@ -51,4 +51,18 @@ public interface AccountService {
      *                                    account.read.any
      */
     Account getAccount(List<String> roles, UUID callerId, UUID accountId);
+
+    /**
+     * Phase 20 prerequisite: the account directory (GET /accounts) -
+     * every account in the system, each paired with its owner's email
+     * via a Java-side join against AuthUser (same pattern
+     * UserManagementServiceImpl uses for role listing). Gated on the
+     * same {@code account.read.any} permission the "any" read tier
+     * already checks - no new permission, this is just a second way to
+     * exercise the one Admin/Compliance already hold.
+     *
+     * @throws com.tradepulse.ledgercore.exception.ForbiddenException if
+     *          the caller lacks account.read.any
+     */
+    List<com.tradepulse.ledgercore.web.dto.AccountSummaryDto> listAllAccounts(List<String> roles);
 }

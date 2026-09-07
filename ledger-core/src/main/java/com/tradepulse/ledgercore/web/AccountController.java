@@ -4,6 +4,7 @@ import com.tradepulse.ledgercore.domain.Account;
 import com.tradepulse.ledgercore.service.AccountFreezeService;
 import com.tradepulse.ledgercore.service.AccountService;
 import com.tradepulse.ledgercore.web.dto.AccountResponse;
+import com.tradepulse.ledgercore.web.dto.AccountSummaryDto;
 import com.tradepulse.ledgercore.web.dto.FreezeAccountRequestDto;
 
 import jakarta.validation.Valid;
@@ -34,6 +35,14 @@ public class AccountController {
     public AccountController(AccountService accountService, AccountFreezeService accountFreezeService) {
         this.accountService = accountService;
         this.accountFreezeService = accountFreezeService;
+    }
+
+    @GetMapping("/accounts")
+    public ResponseEntity<List<AccountSummaryDto>> listAllAccounts(Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        List<String> roles = jwt.getClaimAsStringList("user_role");
+
+        return ResponseEntity.ok(accountService.listAllAccounts(roles));
     }
 
     @GetMapping("/accounts/me")

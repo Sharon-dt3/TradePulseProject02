@@ -76,4 +76,19 @@ public class AccountGrantService {
         grant.revoke();
         accountGrantRepository.save(grant);
     }
+
+    /**
+     * Phase 20 prerequisite: same account.grant.manage permission as
+     * issue/revoke - listing who has a grant on an account is no more
+     * sensitive than granting one. Without this, the grants UI could
+     * issue but never revoke, since grantId was otherwise unknowable.
+     */
+    public List<AccountGrant> listGrantsForAccount(List<String> callerRoles, UUID accountId) {
+        permissionService.requirePermission(callerRoles, GRANT_MANAGE_PERMISSION);
+
+        if (!accountRepository.existsById(accountId)) {
+            throw AccountNotFoundException.forAccountId(accountId);
+        }
+        return accountGrantRepository.findByAccountIdOrderByCreatedAtDesc(accountId);
+    }
 }
