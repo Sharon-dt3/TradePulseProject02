@@ -18,6 +18,7 @@ from app.db import get_session
 from app.ledger_events_consumer import LedgerEventsConsumer
 from app.market_tick_consumer import MarketTickConsumer
 from app.risk_service import get_latest_snapshot_for_user
+from app.risk_explanation import build_explanation
 
 app = FastAPI(title="risk-engine")
 
@@ -62,4 +63,7 @@ def get_my_risk_snapshot(
     snapshot = get_latest_snapshot_for_user(session, user_id)
     if snapshot is None:
         raise HTTPException(status_code=404, detail="No risk snapshot found")
+    snapshot["risk_explanation"] = build_explanation(
+        snapshot["var_95"], snapshot["volatility"], snapshot["sharpe"], snapshot["insufficient_history"]
+    )
     return snapshot

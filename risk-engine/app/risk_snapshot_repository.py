@@ -14,6 +14,7 @@ def insert_snapshot(
     var_95: Optional[Decimal],
     volatility: Optional[Decimal],
     sharpe: Optional[Decimal],
+    portfolio_value: Decimal,
     insufficient_history: bool,
     computed_at: datetime,
 ) -> None:
@@ -21,9 +22,9 @@ def insert_snapshot(
         text(
             """
             INSERT INTO risk_snapshots
-                (account_id, var_95, volatility, sharpe, insufficient_history, computed_at)
+                (account_id, var_95, volatility, sharpe, portfolio_value, insufficient_history, computed_at)
             VALUES
-                (:account_id, :var_95, :volatility, :sharpe, :insufficient_history, :computed_at)
+                (:account_id, :var_95, :volatility, :sharpe, :portfolio_value, :insufficient_history, :computed_at)
             """
         ),
         {
@@ -31,6 +32,7 @@ def insert_snapshot(
             "var_95": var_95,
             "volatility": volatility,
             "sharpe": sharpe,
+            "portfolio_value": portfolio_value,
             "insufficient_history": insufficient_history,
             "computed_at": computed_at,
         },

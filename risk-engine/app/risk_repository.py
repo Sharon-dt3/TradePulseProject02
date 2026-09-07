@@ -15,7 +15,7 @@ def get_latest_snapshot_for_account(session: Session, account_id: UUID) -> Optio
     row = session.execute(
         text(
             """
-            SELECT var_95, volatility, sharpe, insufficient_history, computed_at
+            SELECT var_95, volatility, sharpe, portfolio_value, insufficient_history, computed_at
             FROM risk_snapshots
             WHERE account_id = :account_id
             ORDER BY computed_at DESC

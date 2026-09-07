@@ -55,6 +55,7 @@ def recompute_for_account(
         var_95,
         volatility,
         sharpe,
+        portfolio_value=portfolio_value,
         insufficient_history=insufficient_var or insufficient_sharpe,
         computed_at=now,
     )
