@@ -299,7 +299,7 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {comparison.map((symbol, index) => (
-            <div key={symbol} className="rounded-md bg-surface px-3 py-2">
+            <div key={`${symbol}-${index}`} className="rounded-md bg-surface px-3 py-2">
               <p className="font-mono text-xs font-semibold text-fg">{symbol}</p>
               <p className={`mt-1 text-sm font-semibold ${comparisonMovements[index] > 0 ? "text-success" : comparisonMovements[index] < 0 ? "text-danger" : "text-muted"}`}>
                 {formatMovement(comparisonMovements[index])}
