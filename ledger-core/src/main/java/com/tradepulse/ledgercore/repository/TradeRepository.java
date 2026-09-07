@@ -34,6 +34,10 @@ public interface TradeRepository extends JpaRepository<Trade, UUID> {
     List<Trade> findByAccountIdAndExecutedAtBetweenOrderByExecutedAtAsc(
             UUID accountId, OffsetDateTime start, OffsetDateTime end);
 
+    // Phase 12: backs GET /trades - every trade for an account, newest
+    // first, no date filtering (unlike the statement-period query above).
+    List<Trade> findByAccountIdOrderByExecutedAtDesc(UUID accountId);
+
     @Query("""
             SELECT COALESCE(SUM(
                 CASE WHEN t.side = com.tradepulse.ledgercore.domain.Trade$Side.BUY
@@ -45,4 +49,34 @@ public interface TradeRepository extends JpaRepository<Trade, UUID> {
             WHERE t.accountId = :accountId AND t.symbol = :symbol
             """)
     BigDecimal currentPosition(@Param("accountId") UUID accountId, @Param("symbol") String symbol);
+
+    // Phase 12: backs GET /positions - the same signed-sum logic as
+    // currentPosition above, but grouped across every symbol the account
+    // has ever traded at once, instead of one symbol looked up at a time.
+    // HAVING <> 0 drops a symbol the account has fully closed out, rather
+    // than returning it as a zero-quantity row.
+    @Query("""
+            SELECT t.symbol AS symbol, COALESCE(SUM(
+                CASE WHEN t.side = com.tradepulse.ledgercore.domain.Trade$Side.BUY
+                     THEN t.quantity
+                     ELSE -t.quantity
+                END
+            ), 0) AS quantity
+            FROM Trade t
+            WHERE t.accountId = :accountId
+            GROUP BY t.symbol
+            HAVING COALESCE(SUM(
+                CASE WHEN t.side = com.tradepulse.ledgercore.domain.Trade$Side.BUY
+                     THEN t.quantity
+                     ELSE -t.quantity
+                END
+            ), 0) <> 0
+            """)
+    List<SymbolPosition> currentPositionsByAccount(@Param("accountId") UUID accountId);
+
+    /** Interface projection for currentPositionsByAccount's two-column result. */
+    interface SymbolPosition {
+        String getSymbol();
+        BigDecimal getQuantity();
+    }
 }
