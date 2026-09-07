@@ -14,15 +14,13 @@ import PositionsTable from "@/components/features/PositionsTable";
 import TradesTable from "@/components/features/TradesTable";
 import TransactionsTable from "@/components/features/TransactionsTable";
 import MarketPricesTable from "@/components/features/MarketPricesTable";
-import MarketPriceSparklines, {
-  PriceTrendChart,
-  TRACKED_MARKET_SYMBOLS,
-} from "@/components/features/MarketPriceSparklines";
+import MarketPriceSparklines from "@/components/features/MarketPriceSparklines";
 import StatementForm from "@/components/features/StatementForm";
 import RiskPanel from "@/components/features/RiskPanel";
 import TabBar from "@/components/ui/TabBar";
 import { ledgerCoreFetch } from "@/lib/api/client";
 import { formatMoney } from "@/lib/format";
+import MarketPulse from "@/components/features/MarketPulse";
 import { useDemoEquityPrices } from "@/lib/useDemoEquityPrices";
 import { useMarketPriceHistory } from "@/lib/useMarketPriceHistory";
 
@@ -87,46 +85,6 @@ function TodaySummary({ account, orders, positions, prices, onReviewOpenOrders, 
   );
 }
 
-function MarketPulseCard({ symbol, quote, points }) {
-  const first = points[0]?.price;
-  const changePercent =
-    first != null && quote?.price != null && Number(first) !== 0
-      ? ((Number(quote.price) - Number(first)) / Number(first)) * 100
-      : null;
-  const stale = quote ? quote.ageMs > 30000 : false;
-
-  return (
-    <Link
-      href="/markets"
-      className="rounded-lg border border-line bg-bg p-3 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[var(--shadow-card)]"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="font-mono text-sm font-semibold text-fg">{symbol}</p>
-          <p className="mt-1 font-serif-display tabular-nums text-lg font-semibold text-fg">
-            {quote ? formatMoney(quote.price) : "—"}
-          </p>
-        </div>
-        <span className={`text-xs font-medium ${changePercent > 0 ? "text-success" : changePercent < 0 ? "text-danger" : "text-muted"}`}>
-          {changePercent == null ? "—" : `${changePercent > 0 ? "+" : ""}${changePercent.toFixed(2)}%`}
-        </span>
-      </div>
-      <div className="mt-2">
-        <PriceTrendChart symbol={symbol} points={points} />
-      </div>
-      <p className={`mt-2 text-xs ${stale ? "text-warning" : "text-muted"}`}>
-        {!quote
-          ? "Awaiting first quote"
-          : quote.simulated
-            ? "Simulated demo data"
-            : stale
-              ? `Last quote ${Math.round(quote.ageMs / 1000)}s ago`
-              : "Live quote"}
-      </p>
-    </Link>
-  );
-}
-
 function TraderWorkspace() {
   const [account, setAccount] = useState(null);
   const [orders, setOrders] = useState(null);
@@ -134,6 +92,7 @@ function TraderWorkspace() {
   const [trades, setTrades] = useState(null);
   const [tab, setTab] = useState("Orders");
   const [showWorkingOrders, setShowWorkingOrders] = useState(false);
+  const [orderSymbol, setOrderSymbol] = useState("");
   const [error, setError] = useState(null);
   const { latest: marketPrices, history: marketHistory } = useMarketPriceHistory();
   const {
@@ -198,6 +157,13 @@ function TraderWorkspace() {
     setTab("Positions");
     requestAnimationFrame(() => {
       document.getElementById("activity-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const handleTradeSymbol = (symbol) => {
+    setOrderSymbol(symbol);
+    requestAnimationFrame(() => {
+      document.getElementById("place-order")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
 
@@ -275,31 +241,26 @@ function TraderWorkspace() {
         </Card>
         <Card
           title="Market pulse"
-          action={<span className="text-xs text-muted">{demoEquitiesEnabled ? "live crypto + simulated equities" : "live quote monitor"}</span>}
+          action={<span className="text-xs text-muted">interactive quote workspace</span>}
           className="xl:col-span-2"
         >
-          {!marketPrices && !demoEquitiesEnabled ? (
-            <div className="grid grid-cols-3 gap-3">
-              {Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg bg-line/60" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {TRACKED_MARKET_SYMBOLS.map((symbol) => (
-                <MarketPulseCard
-                  key={symbol}
-                  symbol={symbol}
-                  quote={marketMonitorPrices.find((quote) => quote.symbol === symbol)}
-                  points={marketMonitorHistory[symbol] ?? []}
-                />
-              ))}
-            </div>
-          )}
+          <MarketPulse
+            prices={marketMonitorPrices}
+            history={marketMonitorHistory}
+            demoEquitiesEnabled={demoEquitiesEnabled}
+            onTrade={handleTradeSymbol}
+          />
         </Card>
       </div>
 
       <div id="place-order" className="mb-4 scroll-mt-4">
         <Card title="Place order">
-          <OrderForm onSubmit={handlePlaceOrder} prices={marketPrices} positions={positions} />
+          <OrderForm
+            onSubmit={handlePlaceOrder}
+            prices={marketPrices}
+            positions={positions}
+            initialSymbol={orderSymbol}
+          />
         </Card>
       </div>
 

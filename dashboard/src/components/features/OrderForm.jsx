@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import FormField, { inputCls } from "@/components/ui/FormField";
 import Alert from "@/components/ui/Alert";
@@ -40,7 +40,7 @@ function riskHint(side, symbol, positions, prices) {
   return null;
 }
 
-export default function OrderForm({ onSubmit, prices, positions }) {
+export default function OrderForm({ onSubmit, prices, positions, initialSymbol = "" }) {
   const [symbol, setSymbol] = useState("");
   const [side, setSide] = useState("BUY");
   const [orderType, setOrderType] = useState("MARKET");
@@ -50,6 +50,13 @@ export default function OrderForm({ onSubmit, prices, positions }) {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialSymbol && SYMBOLS.includes(initialSymbol)) {
+      setSymbol(initialSymbol);
+      setError(null);
+    }
+  }, [initialSymbol]);
 
   const livePrice = prices?.find((price) => price.symbol === symbol)?.price ?? null;
   const effectivePrice = orderType === "LIMIT" ? Number(limitPrice) : Number(livePrice);
