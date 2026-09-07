@@ -226,8 +226,8 @@ function TraderWorkspace() {
         onSelectTab={handleSelectTab}
       />
 
-      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="mb-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div>
           <AccountSummaryCard account={account} positions={positions ?? []} prices={marketPrices ?? []} loading />
         </div>
         <RiskPanel />

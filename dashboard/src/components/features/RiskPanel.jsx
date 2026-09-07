@@ -191,7 +191,11 @@ export default function RiskPanel() {
   );
 
   return (
-    <Card title="Live risk analysis" action={<LiveDot connected={liveConnected} />}>
+    <Card
+      title="Live risk analysis"
+      action={<LiveDot connected={liveConnected} />}
+      className="h-full"
+    >
       {notFound && (
         <p className="text-sm text-muted">
           Not enough account activity exists yet for a risk read.
@@ -207,20 +211,20 @@ export default function RiskPanel() {
               Not enough price history yet for meaningful VaR, volatility, or Sharpe values.
             </p>
           ) : (
-            <div className="grid grid-cols-3 gap-4">
-              <div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-4 rounded-lg bg-primary-soft/45 px-3 py-2">
                 <p className="text-xs text-muted">VaR (95%)</p>
                 <p className="font-serif-display tabular-nums text-lg font-semibold text-fg">
                   {formatNumber(snapshot.var95)}
                 </p>
               </div>
-              <div>
+              <div className="flex items-center justify-between gap-4 rounded-lg bg-primary-soft/45 px-3 py-2">
                 <p className="text-xs text-muted">Volatility</p>
                 <p className="font-serif-display tabular-nums text-lg font-semibold text-fg">
                   {formatPct(snapshot.volatility)}
                 </p>
               </div>
-              <div>
+              <div className="flex items-center justify-between gap-4 rounded-lg bg-primary-soft/45 px-3 py-2">
                 <p className="text-xs text-muted">Sharpe</p>
                 <p className="font-serif-display tabular-nums text-lg font-semibold text-fg">
                   {formatNumber(snapshot.sharpe)}
@@ -237,22 +241,22 @@ export default function RiskPanel() {
             <div className="mt-4 space-y-4 border-t border-line pt-4">
               <PortfolioTrend trend={history.trend} />
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-4">
                   <p className="text-xs text-muted">Portfolio change</p>
-                  <p className={`mt-1 text-sm font-semibold ${deltaTone(history.changes.portfolio_value, true)}`}>
+                  <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.portfolio_value, true)}`}>
                     {formatDelta(history.changes.portfolio_value, formatMoney)}
                   </p>
                 </div>
-                <div>
+                <div className="flex items-center justify-between gap-4">
                   <p className="text-xs text-muted">VaR change</p>
-                  <p className={`mt-1 text-sm font-semibold ${deltaTone(history.changes.var_95)}`}>
+                  <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.var_95)}`}>
                     {formatDelta(history.changes.var_95, formatNumber)}
                   </p>
                 </div>
-                <div>
+                <div className="flex items-center justify-between gap-4">
                   <p className="text-xs text-muted">Sharpe change</p>
-                  <p className={`mt-1 text-sm font-semibold ${deltaTone(history.changes.sharpe, true)}`}>
+                  <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.sharpe, true)}`}>
                     {formatDelta(history.changes.sharpe, formatNumber)}
                   </p>
                 </div>
