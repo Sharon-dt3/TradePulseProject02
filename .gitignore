@@ -3,6 +3,7 @@
 # secrets / local env — never commit actual Supabase credentials
 .env
 .env.*
+!tools/tick-producer/.env.example
 *.tfvars
 !*.tfvars.example
 
