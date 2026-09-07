@@ -162,26 +162,25 @@ def run_with_retries(name: str, runner: Any, *arguments: Any) -> None:
 
 
 def main() -> None:
-    """Start the free Finnhub equity and public Coinbase BTCUSD feeds."""
+    """Start the public Coinbase BTCUSD feed and optional Finnhub equities."""
     api_key = os.environ.get("FINNHUB_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "FINNHUB_API_KEY is required for the equity feed. "
-            "Create a free Finnhub key and place it in tools/tick-producer/.env."
-        )
-
     redis_client = build_redis_client()
     redis_client.ping()
 
-    coinbase_thread = threading.Thread(
+    if not api_key:
+        print("FINNHUB_API_KEY is not configured; starting Coinbase BTCUSD feed only.")
+        run_with_retries("Coinbase", run_coinbase, redis_client)
+        return
+
+    finnhub_thread = threading.Thread(
         target=run_with_retries,
-        args=("Coinbase", run_coinbase, redis_client),
+        args=("Finnhub", run_finnhub, redis_client, api_key),
         daemon=True,
     )
-    coinbase_thread.start()
+    finnhub_thread.start()
 
-    print("Starting Finnhub equities and Coinbase BTCUSD feeds. Press Ctrl+C to stop.")
-    run_with_retries("Finnhub", run_finnhub, redis_client, api_key)
+    print("Starting Coinbase BTCUSD feed and Finnhub equities. Press Ctrl+C to stop.")
+    run_with_retries("Coinbase", run_coinbase, redis_client)
 
 
 if __name__ == "__main__":
