@@ -68,7 +68,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")));
-        configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        // DELETE added for /admin/grants/{grantId} and /admin/users/{userId}/roles/{role} -
+        // both were unreachable from a browser before this, since the preflight would
+        // fail with no matching Access-Control-Allow-Methods entry.
+        configuration.setAllowedMethods(List.of("GET", "POST", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

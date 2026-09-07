@@ -10,6 +10,7 @@ from uuid import UUID
 
 import redis
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
@@ -23,6 +24,19 @@ from app.risk_aggregate_service import get_firm_wide_aggregate
 from app.permission_service import require_permission, roles_from_user
 
 app = FastAPI(title="risk-engine")
+
+# Phase 20: GET /risk/me and GET /risk/aggregate are now called directly
+# from the dashboard's browser context (previously nothing hit risk-engine
+# straight from a browser - SSE goes through gateway instead), so this
+# needs the same single-configured-origin CORS handling ledger-core's
+# SecurityConfig already has. DELETE is irrelevant here (risk-engine has
+# no mutating endpoints), so only GET/OPTIONS are allowed.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.dashboard_allowed_origin],
+    allow_methods=["GET", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 _redis_client = redis.Redis(host=settings.redis_host, port=settings.redis_port, decode_responses=True)
 

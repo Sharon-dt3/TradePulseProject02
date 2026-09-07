@@ -71,6 +71,14 @@ class Settings(BaseSettings):
     # market-rate input that would be actively wrong left unset.
     risk_high_risk_var_threshold_pct: Decimal = Decimal("0.10")  # env: RISK_HIGH_RISK_VAR_THRESHOLD_PCT
 
+    # Phase 20: risk-engine was never called directly from a browser
+    # before now (SSE goes through gateway, not risk-engine) so it never
+    # needed CORS handling - GET /risk/me and GET /risk/aggregate being
+    # called straight from the dashboard exposed the gap. Mirrors
+    # ledger-core's ledger.cors.allowed-origins (application.yml) - same
+    # single-configurable-origin approach, not a wildcard.
+    dashboard_allowed_origin: str = "http://localhost:3000"  # env: DASHBOARD_ALLOWED_ORIGIN
+
     @field_validator("price_history_window")
     @classmethod
     def enforce_statistically_meaningful_window(cls, value: int) -> int:

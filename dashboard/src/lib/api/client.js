@@ -2,6 +2,8 @@ import { supabase } from "@/lib/supabaseClient";
 
 const LEDGER_CORE_URL =
   process.env.NEXT_PUBLIC_LEDGER_CORE_URL ?? "http://localhost:8080";
+const RISK_ENGINE_URL =
+  process.env.NEXT_PUBLIC_RISK_ENGINE_URL ?? "http://localhost:8001";
 
 /**
  * Returns the Authorization header for the current session, or an
@@ -22,21 +24,13 @@ export async function authHeaders() {
   return { Authorization: `Bearer ${session.access_token}` };
 }
 
-/**
- * Calls a ledger-core endpoint with the current session's token
- * attached. Throws with the backend's message (API.md's {code, message}
- * error shape) on a non-2xx response, so a caller can show the real
- * reason instead of a generic "request failed" — same reasoning as
- * authHeaders: one place that knows how to talk to ledger-core, so no
- * call site reinvents error handling.
- */
-export async function ledgerCoreFetch(path, options = {}) {
+async function baseFetch(baseUrl, path, options = {}) {
   const headers = {
     ...(await authHeaders()),
     ...(options.headers ?? {}),
   };
 
-  const response = await fetch(`${LEDGER_CORE_URL}${path}`, {
+  const response = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers,
   });
@@ -44,8 +38,13 @@ export async function ledgerCoreFetch(path, options = {}) {
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const message =
-      body?.message ?? `Request to ${path} failed (${response.status})`;
-    throw new Error(message);
+      body?.message ??
+      body?.detail ??
+      `Request to ${path} failed (${response.status})`;
+    const err = new Error(message);
+    err.status = response.status;
+    err.code = body?.code;
+    throw err;
   }
 
   if (response.status === 204) {
@@ -53,4 +52,19 @@ export async function ledgerCoreFetch(path, options = {}) {
   }
 
   return response.json();
+}
+
+/**
+ * Calls a ledger-core endpoint with the current session's token
+ * attached. Throws with the backend's message (either the {code,
+ * message} shape, or a bean-validation 400's {message}-less shape
+ * falling back to a generic string) on a non-2xx response.
+ */
+export function ledgerCoreFetch(path, options = {}) {
+  return baseFetch(LEDGER_CORE_URL, path, options);
+}
+
+/** Same contract as ledgerCoreFetch, pointed at risk-engine instead. */
+export function riskEngineFetch(path, options = {}) {
+  return baseFetch(RISK_ENGINE_URL, path, options);
 }

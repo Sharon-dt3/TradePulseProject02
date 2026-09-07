@@ -1,61 +1,79 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { authHeaders } from "@/lib/api/client";
+import { navItemsForRoles } from "@/lib/roles";
+import Button from "@/components/ui/Button";
+import FormField, { inputCls } from "@/components/ui/FormField";
+import Alert from "@/components/ui/Alert";
 
 export default function Home() {
-  const { user, loading, signIn, signOut } = useAuth();
-  const [email, setEmail] = useState("testtrader@gmail.com");
+  const { user, roles, loading, signIn } = useAuth();
+  const router = useRouter();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
-  const [header, setHeader] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (loading || !user) return;
+    const items = navItemsForRoles(roles);
+    if (items.length > 0) {
+      router.replace(items[0].href);
+    }
+  }, [loading, user, roles, router]);
 
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError(null);
+    setSubmitting(true);
     const { error } = await signIn(email, password);
+    setSubmitting(false);
     if (error) setError(error.message);
   };
 
-  const handleShowHeader = async () => {
-    setHeader(await authHeaders());
-  };
+  if (loading) {
+    return <div className="flex h-64 items-center justify-center text-muted">Loading...</div>;
+  }
 
-  if (loading) return <p>Loading...</p>;
-
-  if (!user) {
+  if (user) {
     return (
-      <form onSubmit={handleSignIn} style={{ padding: 24 }}>
-        <h1>Sign in</h1>
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="email"
-        />
-        <input
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          type="password"
-          placeholder="password"
-        />
-        <button type="submit">Sign in</button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-      </form>
+      <div className="flex h-64 items-center justify-center text-muted">
+        Signed in — no dashboard view is unlocked for your current roles yet.
+      </div>
     );
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Signed in as {user.email}</h1>
-      <p>User ID: {user.id}</p>
-      <p>
-        <Link href="/orders">View orders</Link>
-      </p>
-      <button onClick={handleShowHeader}>Show authHeaders()</button>
-      {header && <pre>{JSON.stringify(header, null, 2)}</pre>}
-      <button onClick={signOut}>Sign out</button>
+    <div className="mx-auto mt-16 max-w-sm">
+      <h1 className="mb-1 text-xl font-semibold text-fg">Sign in</h1>
+      <p className="mb-6 text-sm text-muted">TradePulse Dashboard</p>
+      <form onSubmit={handleSignIn} className="space-y-3">
+        <FormField label="Email">
+          <input
+            className={inputCls}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            type="email"
+            required
+          />
+        </FormField>
+        <FormField label="Password">
+          <input
+            className={inputCls}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            type="password"
+            required
+          />
+        </FormField>
+        <Alert tone="danger" onDismiss={() => setError(null)}>{error}</Alert>
+        <Button type="submit" loading={submitting} className="w-full">
+          Sign in
+        </Button>
+      </form>
     </div>
   );
 }
