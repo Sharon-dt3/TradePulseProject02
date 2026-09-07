@@ -525,7 +525,7 @@ project has been falling back to all session.
 **Depends on:** Phase 12 (reuses its read endpoints' shape) and the
 existing `account_grants` schema (V2/V8).
 **Task checklist:**
-- [ ] Viewer role reads its own data — same shape as Trader's reads
+- [x] Viewer role reads its own data — same shape as Trader's reads
       (Phase 12) minus order creation, gated by `viewer`'s seeded
       permissions.
 - [ ] Delegated Viewer / Support / Auditor granted-account reads:
