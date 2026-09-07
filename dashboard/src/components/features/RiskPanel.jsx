@@ -17,7 +17,6 @@ function normalizeSnapshot(data) {
     var95: data.var_95 ?? data.var95,
     volatility: data.volatility,
     sharpe: data.sharpe,
-    computedAt: data.computed_at ?? data.computedAt,
     insufficientHistory: isInsufficientHistory(
       data.insufficient_history ?? data.insufficientHistory
     ),
@@ -35,23 +34,24 @@ function deltaTone(value, positiveIsGood = false) {
   if (value === null || value === undefined || Number(value) === 0) {
     return "text-muted";
   }
+
   const favorable = positiveIsGood ? Number(value) > 0 : Number(value) < 0;
   return favorable ? "text-success" : "text-danger";
 }
 
 function buildChangeExplanation(changes, sampleSize) {
   if (sampleSize < 2) {
-    return "One risk observation is available. Trade and market activity will create a comparison after the next recalculation.";
+    return "One recorded risk observation is available. A later recalculation will provide a comparison.";
   }
 
   const drivers = [];
   if (changes.var_95 !== null && changes.var_95 !== undefined) {
     drivers.push(
       Number(changes.var_95) > 0
-        ? "Estimated one-day downside risk increased."
+        ? "Estimated downside risk increased."
         : Number(changes.var_95) < 0
-          ? "Estimated one-day downside risk decreased."
-          : "Estimated one-day downside risk was unchanged."
+          ? "Estimated downside risk decreased."
+          : "Estimated downside risk was unchanged."
     );
   }
   if (changes.volatility !== null && changes.volatility !== undefined) {
@@ -63,20 +63,13 @@ function buildChangeExplanation(changes, sampleSize) {
           : "Recent portfolio swings were unchanged."
     );
   }
-  if (changes.sharpe !== null && changes.sharpe !== undefined) {
-    drivers.push(
-      Number(changes.sharpe) > 0
-        ? "Risk-adjusted returns improved."
-        : Number(changes.sharpe) < 0
-          ? "Risk-adjusted returns weakened."
-          : "Risk-adjusted returns were unchanged."
-    );
-  }
 
   return drivers.join(" ");
 }
 
 function PortfolioTrend({ trend }) {
+  if (!trend?.length) return null;
+
   const values = trend.map((point) => Number(point.portfolio_value));
   const minimum = Math.min(...values);
   const maximum = Math.max(...values);
@@ -121,32 +114,136 @@ function PortfolioTrend({ trend }) {
   );
 }
 
+function DetailedRiskMetrics({ analysis }) {
+  const varPercent =
+    analysis.portfolio_value && analysis.var_95 !== null
+      ? Number(analysis.var_95) / Math.abs(Number(analysis.portfolio_value))
+      : null;
+  const calculatedAt = analysis.data_as_of
+    ? new Date(analysis.data_as_of).toLocaleString()
+    : "No current price data";
+
+  if (analysis.insufficient_history) {
+    return (
+      <p className="text-sm text-warning">
+        Insufficient persisted price history for a reliable risk calculation.
+        Risk values will appear after additional market observations are stored.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {analysis.price_data_stale && (
+        <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
+          Market data is stale. Risk estimates use prices last observed at {calculatedAt}.
+        </p>
+      )}
+
+      <div className="rounded-lg bg-primary-soft/45 px-3 py-2">
+        <p className="text-xs text-muted">One-period 95% VaR</p>
+        <p className="font-serif-display tabular-nums text-lg font-semibold text-fg">
+          {formatMoney(analysis.var_95)}
+          {varPercent !== null && (
+            <span className="ml-2 text-sm font-medium text-muted">
+              / {formatPct(varPercent)}
+            </span>
+          )}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-bg px-3 py-2">
+          <p className="text-xs text-muted">Historical VaR</p>
+          <p className="mt-1 font-semibold tabular-nums text-fg">
+            {formatMoney(analysis.historical_var_95)}
+          </p>
+        </div>
+        <div className="rounded-lg bg-bg px-3 py-2">
+          <p className="text-xs text-muted">Expected shortfall</p>
+          <p className="mt-1 font-semibold tabular-nums text-fg">
+            {formatMoney(analysis.expected_shortfall_95)}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <span className="text-muted">Volatility</span>
+        <span className="font-semibold tabular-nums text-fg">
+          {formatPct(analysis.volatility)}
+        </span>
+      </div>
+
+      {analysis.largest_position && (
+        <div
+          className={`rounded-lg px-3 py-2 text-sm ${
+            analysis.concentration_warning
+              ? "bg-warning/10 text-warning"
+              : "bg-bg text-fg"
+          }`}
+        >
+          <span className="font-medium">{analysis.largest_position}</span> is{" "}
+          {formatPct(analysis.concentration_pct)} of portfolio value.
+          {analysis.concentration_warning && " This exceeds the concentration warning threshold."}
+        </div>
+      )}
+
+      <div className="border-t border-line pt-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
+          Position risk contribution
+        </p>
+        <div className="mt-2 space-y-2">
+          {analysis.positions.slice(0, 4).map((position) => (
+            <div key={position.symbol} className="flex items-center justify-between gap-3 text-xs">
+              <span className="min-w-0 truncate text-fg">
+                {position.symbol} · {formatPct(position.weight)}
+              </span>
+              <span className="shrink-0 tabular-nums text-muted">
+                {formatMoney(position.component_var_95)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className="text-xs leading-relaxed text-muted">
+        {analysis.methodology?.covariance_model}. {analysis.methodology?.confidence_level * 100}% confidence,
+        {" "}{analysis.methodology?.horizon}, {analysis.sample_size} aligned returns. Price data as of {calculatedAt}.
+      </p>
+    </div>
+  );
+}
+
 /**
- * Shows the authenticated trader's live risk snapshot alongside a recorded
- * account-history comparison. Live updates refresh the headline metrics;
- * the trend is deliberately based on persisted snapshots only.
+ * Shows detailed current portfolio risk and the existing persisted trend for
+ * the authenticated trader. Detailed calculations are read independently from
+ * the legacy snapshot stream so current risk can expose its methodology.
  */
 export default function RiskPanel() {
   const [snapshot, setSnapshot] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
   const [history, setHistory] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
 
+  const loadRisk = () =>
+    Promise.all([
+      riskEngineFetch("/risk/me").then(normalizeSnapshot),
+      riskEngineFetch("/risk/me/analysis"),
+      riskEngineFetch("/risk/me/history"),
+    ]).then(([nextSnapshot, nextAnalysis, nextHistory]) => {
+      setSnapshot(nextSnapshot);
+      setAnalysis(nextAnalysis);
+      setHistory(nextHistory);
+      setNotFound(false);
+    });
+
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([
-      riskEngineFetch("/risk/me"),
-      riskEngineFetch("/risk/me/history"),
-    ])
-      .then(([riskSnapshot, riskHistory]) => {
-        if (cancelled) return;
-        setSnapshot(normalizeSnapshot(riskSnapshot));
-        setHistory(riskHistory);
-      })
-      .catch((error) => {
-        if (!cancelled && error.status === 404) setNotFound(true);
-      });
+    loadRisk().catch((error) => {
+      if (!cancelled && error.status === 404) setNotFound(true);
+    });
 
     return () => {
       cancelled = true;
@@ -166,11 +263,8 @@ export default function RiskPanel() {
 
         eventSource = stream;
         eventSource.addEventListener("connected", () => setLiveConnected(true));
-        eventSource.addEventListener("risk_update", (event) => {
-          const data = JSON.parse(event.data);
-          setNotFound(false);
-          setSnapshot(normalizeSnapshot(data));
-          riskEngineFetch("/risk/me/history").then(setHistory).catch(() => {});
+        eventSource.addEventListener("risk_update", () => {
+          loadRisk().catch(() => {});
         });
         eventSource.onerror = () => setLiveConnected(false);
       })
@@ -202,52 +296,30 @@ export default function RiskPanel() {
         </p>
       )}
 
-      {!notFound && !snapshot && <p className="text-sm text-muted">Loading risk analysis…</p>}
+      {!notFound && !analysis && (
+        <p className="text-sm text-muted">Loading risk analysis…</p>
+      )}
 
-      {!notFound && snapshot && (
+      {!notFound && analysis && (
         <>
-          {snapshot.insufficientHistory ? (
-            <p className="text-sm text-warning">
-              Not enough price history yet for meaningful VaR, volatility, or Sharpe values.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-4 rounded-lg bg-primary-soft/45 px-3 py-2">
-                <p className="text-xs text-muted">VaR (95%)</p>
-                <p className="font-serif-display tabular-nums text-lg font-semibold text-fg">
-                  {formatNumber(snapshot.var95)}
-                </p>
-              </div>
-              <div className="flex items-center justify-between gap-4 rounded-lg bg-primary-soft/45 px-3 py-2">
-                <p className="text-xs text-muted">Volatility</p>
-                <p className="font-serif-display tabular-nums text-lg font-semibold text-fg">
-                  {formatPct(snapshot.volatility)}
-                </p>
-              </div>
-              <div className="flex items-center justify-between gap-4 rounded-lg bg-primary-soft/45 px-3 py-2">
-                <p className="text-xs text-muted">Sharpe</p>
-                <p className="font-serif-display tabular-nums text-lg font-semibold text-fg">
-                  {formatNumber(snapshot.sharpe)}
-                </p>
-              </div>
-            </div>
-          )}
+          <DetailedRiskMetrics analysis={analysis} />
 
-          {snapshot.explanation && (
-            <p className="mt-3 text-xs leading-relaxed text-muted">{snapshot.explanation}</p>
+          {!analysis.insufficient_history && snapshot?.explanation && (
+            <p className="mt-3 text-xs leading-relaxed text-muted">
+              {snapshot.explanation}
+            </p>
           )}
 
           {history && (
             <details className="group mt-4 border-t border-line pt-3">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.05em] text-muted">
-                Risk details
+                Recorded risk trend
                 <span aria-hidden="true" className="text-base transition-transform group-open:rotate-45">
                   +
                 </span>
               </summary>
               <div className="mt-4 space-y-4">
                 <PortfolioTrend trend={history.trend} />
-
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-xs text-muted">Portfolio change</p>
@@ -258,38 +330,11 @@ export default function RiskPanel() {
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-xs text-muted">VaR change</p>
                     <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.var_95)}`}>
-                      {formatDelta(history.changes.var_95, formatNumber)}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-xs text-muted">Sharpe change</p>
-                    <p className={`text-right text-sm font-semibold ${deltaTone(history.changes.sharpe, true)}`}>
-                      {formatDelta(history.changes.sharpe, formatNumber)}
+                      {formatDelta(history.changes.var_95, formatMoney)}
                     </p>
                   </div>
                 </div>
-
                 <p className="text-xs leading-relaxed text-muted">{changeExplanation}</p>
-
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
-                    Recent execution context
-                  </p>
-                  {history.recent_trades.length ? (
-                    <ul className="mt-2 max-h-28 space-y-1.5 overflow-y-auto pr-1 text-xs text-muted">
-                      {history.recent_trades.map((trade) => (
-                        <li key={`${trade.executed_at}-${trade.symbol}`}>
-                          <span className="font-medium text-fg">{trade.side}</span>{" "}
-                          {trade.quantity} {trade.symbol} at {formatMoney(trade.price)}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-xs text-muted">
-                      No executed trades are available in the recorded account history.
-                    </p>
-                  )}
-                </div>
               </div>
             </details>
           )}

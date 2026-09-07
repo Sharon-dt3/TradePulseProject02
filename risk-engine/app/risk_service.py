@@ -6,13 +6,13 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.accounts_repository import get_account_id_for_user
+from app.config import settings
 from app.risk_repository import (
     get_latest_snapshot_for_account,
     get_recent_snapshots_for_account,
     get_recent_trades_for_account,
 )
 
-HISTORY_SNAPSHOT_LIMIT = 12
 RECENT_TRADE_LIMIT = 5
 
 
@@ -43,7 +43,9 @@ def get_risk_history_for_user(session: Session, user_id: UUID) -> Optional[dict]
     if account_id is None:
         return None
 
-    snapshots = get_recent_snapshots_for_account(session, account_id, HISTORY_SNAPSHOT_LIMIT)
+    snapshots = get_recent_snapshots_for_account(
+        session, account_id, settings.risk_history_snapshot_limit
+    )
     if not snapshots:
         return None
 

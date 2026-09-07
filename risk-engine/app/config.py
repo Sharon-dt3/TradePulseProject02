@@ -57,6 +57,12 @@ class Settings(BaseSettings):
 
     risk_free_rate_annual: Decimal  # env: RISK_FREE_RATE_ANNUAL — required, no default
 
+    # Detailed analytics use a longer displayed snapshot history and make
+    # their concentration and data-freshness policy explicit and tunable.
+    risk_history_snapshot_limit: int = 288  # env: RISK_HISTORY_SNAPSHOT_LIMIT
+    risk_concentration_warning_pct: Decimal = Decimal("0.50")  # env: RISK_CONCENTRATION_WARNING_PCT
+    risk_price_stale_after_seconds: int = 30  # env: RISK_PRICE_STALE_AFTER_SECONDS
+
     # Phase 17: GET /risk/aggregate's high-risk account flag. An
     # account is high-risk when its one-day 95% VaR exceeds this
     # fraction of its own portfolio_value — sized relative to the
@@ -86,6 +92,16 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"price_history_window must be at least 20 (Phase 7's "
                 f"statistical-meaningfulness floor), got {value}"
+            )
+        return value
+
+    @field_validator("risk_history_snapshot_limit")
+    @classmethod
+    def enforce_history_snapshot_limit(cls, value: int) -> int:
+        """Require enough observations for a useful displayed trend."""
+        if value < 20:
+            raise ValueError(
+                f"risk_history_snapshot_limit must be at least 20, got {value}"
             )
         return value
 

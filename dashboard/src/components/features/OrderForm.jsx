@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "@/components/ui/Button";
 import FormField, { inputCls } from "@/components/ui/FormField";
 import Alert from "@/components/ui/Alert";
 import Modal from "@/components/ui/Modal";
+import { riskEngineFetch } from "@/lib/api/client";
 import { rejectionMessage, formatMoney } from "@/lib/format";
 
 const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "TSLA", "BTCUSD"];
@@ -41,7 +42,9 @@ function riskHint(side, symbol, positions, prices) {
 }
 
 export default function OrderForm({ onSubmit, prices, positions, initialSymbol = "" }) {
-  const [symbol, setSymbol] = useState("");
+  const [symbol, setSymbol] = useState(
+    SYMBOLS.includes(initialSymbol) ? initialSymbol : ""
+  );
   const [side, setSide] = useState("BUY");
   const [orderType, setOrderType] = useState("MARKET");
   const [quantity, setQuantity] = useState("");
@@ -50,13 +53,8 @@ export default function OrderForm({ onSubmit, prices, positions, initialSymbol =
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [reviewOpen, setReviewOpen] = useState(false);
-
-  useEffect(() => {
-    if (initialSymbol && SYMBOLS.includes(initialSymbol)) {
-      setSymbol(initialSymbol);
-      setError(null);
-    }
-  }, [initialSymbol]);
+  const [projectedRisk, setProjectedRisk] = useState(null);
+  const [projectedRiskError, setProjectedRiskError] = useState(null);
 
   const livePrice = prices?.find((price) => price.symbol === symbol)?.price ?? null;
   const effectivePrice = orderType === "LIMIT" ? Number(limitPrice) : Number(livePrice);
@@ -64,15 +62,36 @@ export default function OrderForm({ onSubmit, prices, positions, initialSymbol =
   const hasValidQuantity = Number(quantity) > 0;
   const hasValidLimit = orderType !== "LIMIT" || Number(limitPrice) > 0;
 
-  const openReview = (event) => {
+  const openReview = async (event) => {
     event.preventDefault();
     setError(null);
     setResult(null);
+    setProjectedRisk(null);
+    setProjectedRiskError(null);
     if (!hasValidQuantity || !hasValidLimit) {
       setError("Enter a quantity greater than zero and, for a limit order, a valid limit price.");
       return;
     }
     setReviewOpen(true);
+    if (!effectivePrice) {
+      setProjectedRiskError("A current quote or valid limit price is required for a projected risk estimate.");
+      return;
+    }
+    try {
+      const analysis = await riskEngineFetch("/risk/me/project-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbol: symbol.trim().toUpperCase(),
+          side,
+          quantity: Number(quantity),
+          reference_price: effectivePrice,
+        }),
+      });
+      setProjectedRisk(analysis);
+    } catch {
+      setProjectedRiskError("Projected risk is unavailable. You can still review and submit this order.");
+    }
   };
 
   const confirmSubmit = async () => {
@@ -151,6 +170,27 @@ export default function OrderForm({ onSubmit, prices, positions, initialSymbol =
             <div key={label} className="flex justify-between gap-5"><dt className="text-muted">{label}</dt><dd className="text-right font-medium text-fg">{value}</dd></div>
           ))}
         </dl>
+        <div className="mt-4 rounded-lg border border-line bg-bg px-3 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
+            Advisory projected risk
+          </p>
+          {projectedRiskError && <p className="mt-2 text-xs text-muted">{projectedRiskError}</p>}
+          {projectedRisk?.insufficient_history && (
+            <p className="mt-2 text-xs text-warning">
+              Price history is insufficient for a reliable projected risk calculation.
+            </p>
+          )}
+          {projectedRisk && !projectedRisk.insufficient_history && (
+            <div className="mt-2 space-y-1 text-xs">
+              <p>Projected 95% VaR: <span className="font-semibold text-fg">{formatMoney(projectedRisk.var_95)}</span></p>
+              <p>Largest exposure: <span className="font-semibold text-fg">{projectedRisk.largest_position} ({(Number(projectedRisk.concentration_pct) * 100).toFixed(1)}%)</span></p>
+              {projectedRisk.concentration_warning && (
+                <p className="text-warning">Projected concentration exceeds the configured warning threshold.</p>
+              )}
+              <p className="text-muted">This estimate is advisory only and does not approve or block the order.</p>
+            </div>
+          )}
+        </div>
         <Alert tone="warning"><span className="text-xs">By submitting, you acknowledge that quotes can change and that a market order has no guaranteed execution price.</span></Alert>
       </Modal>
     </form>

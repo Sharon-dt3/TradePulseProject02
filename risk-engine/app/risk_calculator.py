@@ -19,6 +19,7 @@ from typing import Dict, List, Optional, Tuple
 
 Z_SCORE_95 = Decimal("1.645")
 YEAR_SECONDS = Decimal(365.25 * 86400)
+CONFIDENCE_LEVEL = Decimal("0.95")
 
 # A single return (2 price points) can't produce a variance under any
 # standard formula without it being trivially/misleadingly zero — exactly
@@ -129,3 +130,143 @@ def compute_sharpe(
 
     sharpe = statistics.mean(excess_returns) / stdev
     return sharpe, False
+
+
+# PUBLIC_INTERFACE
+def compute_portfolio_risk_analysis(
+    positions: Dict[str, Decimal],
+    prices_by_symbol: Dict[str, List[Tuple[datetime, Decimal]]],
+    cash: Decimal,
+) -> dict:
+    """Calculate covariance-aware, parametric, and historical risk metrics.
+
+    The function is deliberately pure: callers provide persisted price series
+    and receive an explicit insufficient-history response instead of a
+    fabricated zero-risk measurement.
+    """
+    portfolio_value = compute_portfolio_value(positions, prices_by_symbol, cash)
+    if not positions:
+        return {
+            "portfolio_value": portfolio_value,
+            "var_95": Decimal("0"),
+            "historical_var_95": Decimal("0"),
+            "expected_shortfall_95": Decimal("0"),
+            "volatility": Decimal("0"),
+            "concentration_pct": Decimal("0"),
+            "largest_position": None,
+            "positions": [],
+            "sample_size": 0,
+            "insufficient_history": False,
+        }
+
+    return_sets = {
+        symbol: _return_series(points)
+        for symbol, points in prices_by_symbol.items()
+        if symbol in positions and len(points) >= MIN_POINTS_FOR_VARIANCE
+    }
+    if len(return_sets) != len(positions):
+        return {
+            "portfolio_value": portfolio_value,
+            "var_95": None,
+            "historical_var_95": None,
+            "expected_shortfall_95": None,
+            "volatility": None,
+            "concentration_pct": None,
+            "largest_position": None,
+            "positions": [],
+            "sample_size": 0,
+            "insufficient_history": True,
+        }
+
+    common_returns = min(len(series) for series in return_sets.values())
+    if common_returns < 2 or portfolio_value == 0:
+        return {
+            "portfolio_value": portfolio_value,
+            "var_95": None,
+            "historical_var_95": None,
+            "expected_shortfall_95": None,
+            "volatility": None,
+            "concentration_pct": None,
+            "largest_position": None,
+            "positions": [],
+            "sample_size": common_returns,
+            "insufficient_history": True,
+        }
+
+    aligned_returns = {
+        symbol: series[-common_returns:] for symbol, series in return_sets.items()
+    }
+    values_by_symbol = {}
+    weights = {}
+    for symbol, quantity in positions.items():
+        latest_price = prices_by_symbol[symbol][-1][1]
+        value = quantity * latest_price
+        values_by_symbol[symbol] = value
+        weights[symbol] = value / portfolio_value
+
+    portfolio_returns = [
+        sum(
+            (weights[symbol] * aligned_returns[symbol][index] for symbol in positions),
+            Decimal("0"),
+        )
+        for index in range(common_returns)
+    ]
+    portfolio_variance = statistics.variance(portfolio_returns)
+    volatility = portfolio_variance.sqrt()
+    absolute_value = abs(portfolio_value)
+    var_95 = Z_SCORE_95 * volatility * absolute_value
+
+    ordered_returns = sorted(portfolio_returns)
+    tail_count = max(
+        1, int(len(ordered_returns) * float(Decimal("1") - CONFIDENCE_LEVEL))
+    )
+    tail_returns = ordered_returns[:tail_count]
+    historical_var = max(Decimal("0"), -tail_returns[-1] * absolute_value)
+    expected_shortfall = max(
+        Decimal("0"),
+        -(sum(tail_returns, Decimal("0")) / Decimal(len(tail_returns))) * absolute_value,
+    )
+
+    portfolio_mean = statistics.mean(portfolio_returns)
+    position_rows = []
+    for symbol in positions:
+        symbol_returns = aligned_returns[symbol]
+        symbol_mean = statistics.mean(symbol_returns)
+        covariance = sum(
+            (
+                (symbol_returns[index] - symbol_mean)
+                * (portfolio_returns[index] - portfolio_mean)
+                for index in range(common_returns)
+            ),
+            Decimal("0"),
+        ) / Decimal(common_returns - 1)
+        component_var = (
+            Decimal("0")
+            if portfolio_variance == 0
+            else Z_SCORE_95 * absolute_value * weights[symbol] * covariance / volatility
+        )
+        position_rows.append(
+            {
+                "symbol": symbol,
+                "quantity": positions[symbol],
+                "notional_value": values_by_symbol[symbol],
+                "weight": weights[symbol],
+                "component_var_95": component_var,
+            }
+        )
+
+    position_rows.sort(key=lambda row: abs(row["notional_value"]), reverse=True)
+    largest_position = position_rows[0]["symbol"] if position_rows else None
+    concentration_pct = abs(position_rows[0]["weight"]) if position_rows else Decimal("0")
+    return {
+        "portfolio_value": portfolio_value,
+        "var_95": var_95,
+        "historical_var_95": historical_var,
+        "expected_shortfall_95": expected_shortfall,
+        "volatility": volatility,
+        "concentration_pct": concentration_pct,
+        "largest_position": largest_position,
+        "positions": position_rows,
+        "sample_size": common_returns,
+        "insufficient_history": False,
+    }

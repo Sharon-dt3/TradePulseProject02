@@ -277,6 +277,7 @@ function TraderWorkspace() {
       <div id="place-order" className="mb-4 scroll-mt-4">
         <Card title="Place order">
           <OrderForm
+            key={orderSymbol}
             onSubmit={handlePlaceOrder}
             prices={marketPrices}
             positions={positions}

@@ -6,18 +6,25 @@ MarketTickConsumer.java's "ledger-core-1": correct for one running
 instance; horizontally scaling risk-engine would need a real per-instance
 name so each instance is a distinct consumer within the same group.
 """
+from decimal import Decimal
 from uuid import UUID
 
 import redis
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.accounts_repository import get_account_id_for_user
 from app.auth import get_current_user
 from app.config import settings
 from app.db import get_session
 from app.ledger_events_consumer import LedgerEventsConsumer
 from app.market_tick_consumer import MarketTickConsumer
+from app.risk_analysis_service import (
+    get_account_risk_analysis,
+    project_account_order_risk,
+)
 from app.risk_service import get_latest_snapshot_for_user, get_risk_history_for_user
 from app.risk_explanation import build_explanation
 from app.risk_aggregate_service import get_firm_wide_aggregate
@@ -37,11 +44,11 @@ app = FastAPI(
 # straight from a browser - SSE goes through gateway instead), so this
 # needs the same single-configured-origin CORS handling ledger-core's
 # SecurityConfig already has. DELETE is irrelevant here (risk-engine has
-# no mutating endpoints), so only GET/OPTIONS are allowed.
+# no ledger mutations), so only the advisory POST/GET/OPTIONS methods are allowed.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.dashboard_allowed_origin],
-    allow_methods=["GET", "OPTIONS"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
@@ -53,6 +60,17 @@ _market_tick_consumer = MarketTickConsumer(
 _ledger_events_consumer = LedgerEventsConsumer(
     _redis_client, settings.ledger_events_stream, settings.risk_consumer_group, "risk-engine-1"
 )
+
+
+class ProjectOrderRiskRequest(BaseModel):
+    """Authenticated request for a non-binding post-order risk projection."""
+
+    symbol: str = Field(..., min_length=1, max_length=20, description="Proposed order symbol.")
+    side: str = Field(..., pattern="^(BUY|SELL)$", description="Proposed order direction.")
+    quantity: Decimal = Field(..., gt=0, description="Positive proposed order quantity.")
+    reference_price: Decimal = Field(
+        ..., gt=0, description="Current quote or limit price used only for this estimate."
+    )
 
 
 @app.on_event("startup")
@@ -90,6 +108,58 @@ def get_my_risk_snapshot(
         snapshot["var_95"], snapshot["volatility"], snapshot["sharpe"], snapshot["insufficient_history"]
     )
     return snapshot
+
+
+@app.get(
+    "/risk/me/analysis",
+    tags=["risk"],
+    operation_id="getMyDetailedRiskAnalysis",
+    summary="Get detailed current account risk analysis",
+    description="Returns covariance-aware and historical tail-risk analytics for the authenticated account.",
+)
+# PUBLIC_INTERFACE
+def get_my_detailed_risk_analysis(
+    user: dict = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Return detailed live account risk analysis for the authenticated user."""
+    account_id = get_account_id_for_user(session, UUID(user["sub"]))
+    if account_id is None:
+        raise HTTPException(status_code=404, detail="No account found")
+    analysis = get_account_risk_analysis(session, account_id)
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="No account found")
+    return analysis
+
+
+@app.post(
+    "/risk/me/project-order",
+    tags=["risk"],
+    operation_id="projectMyOrderRisk",
+    summary="Project risk for a proposed order",
+    description="Returns an advisory-only projected risk analysis; it does not approve or block an order.",
+)
+# PUBLIC_INTERFACE
+def project_my_order_risk(
+    request: ProjectOrderRiskRequest,
+    user: dict = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Return advisory projected account risk for a proposed order request."""
+    account_id = get_account_id_for_user(session, UUID(user["sub"]))
+    if account_id is None:
+        raise HTTPException(status_code=404, detail="No account found")
+    analysis = project_account_order_risk(
+        session,
+        account_id,
+        request.symbol.upper(),
+        request.side,
+        request.quantity,
+        request.reference_price,
+    )
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="No account found")
+    return analysis
 
 
 @app.get(
