@@ -1,10 +1,10 @@
 "use client";
 
 const VARIANTS = {
-  primary: "bg-primary text-primary-fg hover:opacity-90 shadow-sm",
-  secondary: "bg-surface text-fg border border-line hover:bg-primary-soft",
-  danger: "bg-danger text-white hover:opacity-90 shadow-sm",
-  ghost: "text-fg hover:bg-primary-soft",
+  primary: "bg-primary text-primary-fg hover:bg-[#6ae6d5] shadow-[0_5px_16px_rgba(45,212,191,0.16)]",
+  secondary: "border border-line bg-[#16243a] text-fg hover:border-[#3a587b] hover:bg-[#1b2d47]",
+  danger: "bg-danger text-[#260710] hover:bg-[#ff9aa2] shadow-sm",
+  ghost: "text-fg hover:bg-[#17243a]",
 };
 
 export default function Button({
@@ -16,11 +16,11 @@ export default function Button({
   children,
   ...props
 }) {
-  const sizeCls = size === "sm" ? "text-sm px-3 py-1.5" : "text-sm px-4 py-2";
+  const sizeCls = size === "sm" ? "px-3 py-1.5 text-xs" : "px-3.5 py-2 text-sm";
   return (
     <button
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${sizeCls} ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${sizeCls} ${VARIANTS[variant]} ${className}`}
       {...props}
     >
       {loading && (

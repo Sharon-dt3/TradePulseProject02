@@ -3,42 +3,40 @@
 /**
  * Shared visual tokens for the TradePulse dashboard.
  *
- * The workspace uses a stable light appearance with a layered indigo canvas
- * and high-contrast content surfaces. This prevents system dark-mode settings
- * from changing financial data presentation unexpectedly.
+ * The dashboard uses a dark, information-dense trading canvas. A restrained
+ * cyan accent and clear semantic colors keep live financial data legible
+ * without turning every surface into a competing visual element.
  */
 @theme {
-  --color-bg: #eef2ff;
-  --color-fg: #17203a;
-  --color-surface: #ffffff;
-  --color-line: #dce3f2;
-  --color-muted: #69748e;
+  --color-bg: #09111f;
+  --color-fg: #eaf1ff;
+  --color-surface: #101b2e;
+  --color-line: #253550;
+  --color-muted: #91a1bb;
 
-  --color-primary: #4f46e5;
-  --color-primary-fg: #ffffff;
-  --color-primary-soft: #eeefff;
+  --color-primary: #2dd4bf;
+  --color-primary-fg: #041311;
+  --color-primary-soft: #123a3d;
 
-  --color-success: #14805e;
-  --color-success-bg: #e8faf3;
-  --color-warning: #a65d13;
-  --color-warning-bg: #fff5e6;
-  --color-danger: #c0352b;
-  --color-danger-bg: #fff0ef;
-  --color-info: #2563a8;
-  --color-info-bg: #eaf4ff;
+  --color-success: #42d392;
+  --color-success-bg: #103528;
+  --color-warning: #f6b84a;
+  --color-warning-bg: #3d2b0b;
+  --color-danger: #ff7b86;
+  --color-danger-bg: #421b28;
+  --color-info: #6ab7ff;
+  --color-info-bg: #102f51;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
-    "Times New Roman", serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 
-  --shadow-card: 0 1px 2px rgba(35, 46, 95, 0.03), 0 12px 32px rgba(45, 54, 111, 0.08);
-  --shadow-card-hover: 0 4px 12px rgba(35, 46, 95, 0.07), 0 18px 40px rgba(45, 54, 111, 0.13);
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.18);
+  --shadow-card-hover: 0 18px 42px rgba(0, 0, 0, 0.28);
 }
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
   max-width: 100vw;
   overflow-x: hidden;
 }
@@ -47,9 +45,9 @@ body {
   min-height: 100%;
   color: var(--color-fg);
   background:
-    radial-gradient(circle at 88% 1%, rgba(167, 139, 250, 0.22), transparent 28rem),
-    radial-gradient(circle at 25% 100%, rgba(96, 165, 250, 0.16), transparent 32rem),
-    linear-gradient(135deg, #f8faff 0%, var(--color-bg) 48%, #f4f1ff 100%);
+    radial-gradient(circle at 8% -10%, rgba(45, 212, 191, 0.15), transparent 28rem),
+    radial-gradient(circle at 100% 0%, rgba(85, 115, 255, 0.16), transparent 32rem),
+    linear-gradient(135deg, #07101e 0%, #0b1424 48%, #0b1020 100%);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -81,8 +79,17 @@ a {
 }
 
 ::selection {
-  background: #dcdcff;
-  color: #25208a;
+  color: #031411;
+  background: #72ead9;
+}
+
+.font-serif-display {
+  font-family: var(--font-serif);
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -94,13 +101,4 @@ a {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-.font-serif-display {
-  font-family: var(--font-serif);
-  font-feature-settings: "lnum" 1, "tnum" 1;
-}
-
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
 }

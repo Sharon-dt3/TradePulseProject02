@@ -7,19 +7,19 @@
 export default function Card({ title, action, className = "", children }) {
   return (
     <section
-      className={`overflow-hidden rounded-2xl border border-white/80 bg-surface/90 shadow-[var(--shadow-card)] backdrop-blur-sm transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-[#cfd5fb] hover:shadow-[var(--shadow-card-hover)] ${className}`}
+      className={`overflow-hidden rounded-xl border border-[#263754] bg-surface/95 shadow-[var(--shadow-card)] transition-[border-color,box-shadow] hover:border-[#365071] hover:shadow-[var(--shadow-card-hover)] ${className}`}
     >
       {(title || action) && (
-        <div className="flex min-h-14 items-center justify-between gap-4 border-b border-[#e8ebf5] bg-gradient-to-r from-[#fbfcff] to-[#f5f4ff] px-5 py-3.5">
+        <div className="flex min-h-12 items-center justify-between gap-4 border-b border-[#22324a] bg-[#111f34] px-4 py-2.5">
           {title && (
-            <h3 className="text-[0.7rem] font-extrabold uppercase tracking-[0.11em] text-[#58637e]">
+            <h3 className="text-[0.67rem] font-extrabold uppercase tracking-[0.12em] text-[#aab9d0]">
               {title}
             </h3>
           )}
           {action}
         </div>
       )}
-      <div className="p-5">{children}</div>
+      <div className="p-4">{children}</div>
     </section>
   );
 }
