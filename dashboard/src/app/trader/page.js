@@ -241,11 +241,6 @@ function TraderWorkspace() {
           action={<span className="text-xs text-muted">{demoEquitiesEnabled ? "live crypto + simulated equities" : "live quote monitor"}</span>}
           className="xl:col-span-2"
         >
-          {demoEquitiesEnabled && (
-            <p className="mb-3 rounded-lg border border-warning/30 bg-warning-soft px-3 py-2 text-xs leading-relaxed text-warning">
-              Demo mode: equity movements are simulated for display only. They are not live market data and cannot affect orders, positions, portfolio values, or risk calculations.
-            </p>
-          )}
           {!marketPrices && !demoEquitiesEnabled ? (
             <div className="grid grid-cols-3 gap-3">
               {Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg bg-line/60" />)}
