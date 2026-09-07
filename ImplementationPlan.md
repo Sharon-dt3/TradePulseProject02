@@ -495,7 +495,7 @@ actually fires together, in order:
 **Depends on:** Phase 1-11 (uses the existing auth/order/risk stack; no new
 services).
 **Task checklist:**
-- [ ] `POST /orders/{orderId}/cancel` (`order.cancel.own`) — only a WORKING
+- [x] `POST /orders/{orderId}/cancel` (`order.cancel.own`) — only a WORKING
       order the caller owns is cancellable; anything else (already
       FILLED/REJECTED/CANCELLED, or someone else's order) rejects.
 - [ ] `GET /positions` (`position.read.own`) and `GET /trades`
