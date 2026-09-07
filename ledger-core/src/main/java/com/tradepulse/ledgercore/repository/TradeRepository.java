@@ -28,11 +28,10 @@ import com.tradepulse.ledgercore.domain.Trade;
 public interface TradeRepository extends JpaRepository<Trade, UUID> {
     List<Trade> findByOrderIdIn(Collection<UUID> orderIds);
 
-    // Phase 9: backs StatementService's statement-period trade listing.
-    // executedAt is stored per-trade (not the enclosing order), so this
-    // filters directly on it rather than joining through orders.
-    List<Trade> findByAccountIdAndExecutedAtBetweenOrderByExecutedAtAsc(
-            UUID accountId, OffsetDateTime start, OffsetDateTime end);
+    // StatementService uses [start, endExclusive), avoiding inclusion of a
+    // trade executed precisely at midnight immediately after the statement.
+    List<Trade> findByAccountIdAndExecutedAtGreaterThanEqualAndExecutedAtLessThanOrderByExecutedAtAsc(
+            UUID accountId, OffsetDateTime start, OffsetDateTime endExclusive);
 
     // Phase 12: backs GET /trades - every trade for an account, newest
     // first, no date filtering (unlike the statement-period query above).

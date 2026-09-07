@@ -27,26 +27,20 @@ import com.tradepulse.ledgercore.domain.AuditLog;
 import com.tradepulse.ledgercore.domain.Trade;
 import com.tradepulse.ledgercore.exception.AccountNotFoundException;
 import com.tradepulse.ledgercore.exception.ForbiddenException;
+import com.tradepulse.ledgercore.exception.InvalidStatementPeriodException;
 import com.tradepulse.ledgercore.repository.AccountRepository;
 import com.tradepulse.ledgercore.repository.AuditLogRepository;
 import com.tradepulse.ledgercore.repository.TradeRepository;
 
 /**
- * Phase 9: server-side PDF statement generation and upload to the private
- * Supabase Storage "statements" bucket (V19__statements_bucket.sql).
- * Runs entirely here in ledger-core, never client-side, so the
- * service-role key that bypasses Storage RLS never leaves the backend.
- *
- * Object path convention: "{userId}/{accountId}/{periodEnd}.pdf" *within*
- * the "statements" bucket - bucket_id is a separate column on
- * storage.objects, not part of the object name, so it is not repeated in
- * the path itself. This matters because statements_select_own reads
- * (storage.foldername(name))[1] as the owning user id: prefixing the
- * object name with "statements/" would shift that first folder segment
- * and break the policy.
+ * Generates account-statement PDFs for an exact inclusive date range, stores
+ * them in the private Supabase Storage statements bucket, and returns the
+ * generated document to the authenticated account owner.
  */
 @Service
 public class StatementService {
+
+    private static final int TRADES_PER_PAGE = 38;
 
     private final AccountRepository accountRepository;
     private final TradeRepository tradeRepository;
@@ -69,28 +63,44 @@ public class StatementService {
         this.supabaseServiceRoleKey = supabaseServiceRoleKey;
     }
 
+    // PUBLIC_INTERFACE
     /**
-     * Generates a statement PDF for accountId covering
-     * [periodStart, periodEnd] (inclusive) and uploads it to the
-     * statements bucket. Only the account's own owner may request their
-     * own statement - there is no delegated/support/auditor path onto
-     * this endpoint, unlike account reads elsewhere in this project.
+     * Generates, stores, and returns an account statement for the selected dates.
+     * The requested interval is inclusive on both calendar dates and is translated
+     * to [start-of-start-date, start-of-day-after-end-date) in UTC for the query.
+     *
+     * @param accountId the statement account
+     * @param requesterId the authenticated account owner
+     * @param periodStart the first included calendar date
+     * @param periodEnd the last included calendar date
+     * @return the generated PDF bytes and its safe download filename
      */
-    public String generateAndStore(UUID accountId, UUID requesterId, LocalDate periodStart, LocalDate periodEnd) {
+    public GeneratedStatement generateAndStore(
+            UUID accountId,
+            UUID requesterId,
+            LocalDate periodStart,
+            LocalDate periodEnd) {
+        if (periodEnd.isBefore(periodStart)) {
+            throw InvalidStatementPeriodException.endBeforeStart();
+        }
+
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> AccountNotFoundException.forAccountId(accountId));
-
         if (!account.getUserId().equals(requesterId)) {
             throw ForbiddenException.missingPermission("statements.generate.own");
         }
 
         OffsetDateTime rangeStart = periodStart.atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime rangeEnd = periodEnd.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-        List<Trade> trades = tradeRepository.findByAccountIdAndExecutedAtBetweenOrderByExecutedAtAsc(
-                accountId, rangeStart, rangeEnd);
+        OffsetDateTime rangeEndExclusive = periodEnd.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        List<Trade> trades =
+                tradeRepository.findByAccountIdAndExecutedAtGreaterThanEqualAndExecutedAtLessThanOrderByExecutedAtAsc(
+                        accountId,
+                        rangeStart,
+                        rangeEndExclusive);
 
         byte[] pdfBytes = renderPdf(account, periodStart, periodEnd, trades);
-        String objectPath = requesterId + "/" + accountId + "/" + periodEnd + ".pdf";
+        String filename = "tradepulse-statement-" + periodStart + "-to-" + periodEnd + ".pdf";
+        String objectPath = requesterId + "/" + accountId + "/" + filename;
         uploadToStorage(objectPath, pdfBytes);
 
         auditLogRepository.save(new AuditLog(
@@ -104,78 +114,73 @@ public class StatementService {
                         "tradeCount", trades.size(),
                         "objectPath", objectPath)));
 
-        return objectPath;
+        return new GeneratedStatement(filename, pdfBytes);
     }
 
     private byte[] renderPdf(Account account, LocalDate periodStart, LocalDate periodEnd, List<Trade> trades) {
         try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage();
-            document.addPage(page);
             PDType1Font bold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
             PDType1Font regular = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+            int pageCount = Math.max(1, (int) Math.ceil((double) trades.size() / TRADES_PER_PAGE));
 
-            try (PDPageContentStream content = new PDPageContentStream(document, page)) {
-                float y = 740;
-                content.beginText();
-                content.setFont(bold, 16);
-                content.newLineAtOffset(50, y);
-                content.showText("TradePulse Account Statement");
-                content.endText();
+            for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+                int fromIndex = pageIndex * TRADES_PER_PAGE;
+                int toIndex = Math.min(fromIndex + TRADES_PER_PAGE, trades.size());
+                PDPage page = new PDPage();
+                document.addPage(page);
 
-                y -= 30;
-                content.beginText();
-                content.setFont(regular, 11);
-                content.newLineAtOffset(50, y);
-                content.showText("Account: " + account.getId());
-                content.endText();
-
-                y -= 16;
-                content.beginText();
-                content.setFont(regular, 11);
-                content.newLineAtOffset(50, y);
-                content.showText("Period: " + periodStart + " to " + periodEnd);
-                content.endText();
-
-                y -= 30;
-                content.beginText();
-                content.setFont(bold, 11);
-                content.newLineAtOffset(50, y);
-                content.showText("Date         Symbol   Side   Quantity        Price");
-                content.endText();
-
-                if (trades.isEmpty()) {
+                try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+                    float y = 740;
+                    writeLine(content, bold, 16, 50, y, "TradePulse Account Statement");
+                    y -= 28;
+                    writeLine(content, regular, 11, 50, y, "Account: " + account.getId());
                     y -= 16;
-                    content.beginText();
-                    content.setFont(regular, 10);
-                    content.newLineAtOffset(50, y);
-                    content.showText("No trades in this period.");
-                    content.endText();
-                }
-
-                for (Trade trade : trades) {
+                    writeLine(content, regular, 11, 50, y, "Period: " + periodStart + " to " + periodEnd);
                     y -= 16;
-                    if (y < 50) {
-                        break; // Phase 9: single-page statement for now; pagination is a later enhancement.
+                    writeLine(content, regular, 10, 50, y,
+                            "Page " + (pageIndex + 1) + " of " + pageCount + " | " + trades.size() + " trade(s)");
+                    y -= 28;
+                    writeLine(content, bold, 10, 50, y,
+                            "Date         Symbol   Side   Quantity        Price");
+
+                    if (trades.isEmpty()) {
+                        y -= 18;
+                        writeLine(content, regular, 10, 50, y, "No trades in this period.");
                     }
-                    content.beginText();
-                    content.setFont(regular, 10);
-                    content.newLineAtOffset(50, y);
-                    content.showText(String.format("%-12s %-8s %-6s %-14s %s",
-                            trade.getExecutedAt().toLocalDate(),
-                            trade.getSymbol(),
-                            trade.getSide(),
-                            trade.getQuantity().toPlainString(),
-                            trade.getPrice().toPlainString()));
-                    content.endText();
+
+                    for (Trade trade : trades.subList(fromIndex, toIndex)) {
+                        y -= 16;
+                        writeLine(content, regular, 10, 50, y, String.format(
+                                "%-12s %-8s %-6s %-14s %s",
+                                trade.getExecutedAt().toLocalDate(),
+                                trade.getSymbol(),
+                                trade.getSide(),
+                                trade.getQuantity().toPlainString(),
+                                trade.getPrice().toPlainString()));
+                    }
                 }
             }
 
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            document.save(out);
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to render statement PDF", e);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            document.save(output);
+            return output.toByteArray();
+        } catch (IOException exception) {
+            throw new UncheckedIOException("Failed to render statement PDF", exception);
         }
+    }
+
+    private void writeLine(
+            PDPageContentStream content,
+            PDType1Font font,
+            float fontSize,
+            float x,
+            float y,
+            String text) throws IOException {
+        content.beginText();
+        content.setFont(font, fontSize);
+        content.newLineAtOffset(x, y);
+        content.showText(text);
+        content.endText();
     }
 
     private void uploadToStorage(String objectPath, byte[] pdfBytes) {
@@ -187,17 +192,27 @@ public class StatementService {
                 .header("x-upsert", "true")
                 .PUT(HttpRequest.BodyPublishers.ofByteArray(pdfBytes))
                 .build();
+
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 300) {
                 throw new IllegalStateException(
-                        "Supabase Storage upload failed: HTTP " + response.statusCode() + " " + response.body());
+                        "Supabase Storage upload failed: HTTP "
+                                + response.statusCode()
+                                + " "
+                                + response.body());
             }
-        } catch (IOException | InterruptedException e) {
-            if (e instanceof InterruptedException) {
+        } catch (IOException | InterruptedException exception) {
+            if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new IllegalStateException("Supabase Storage upload failed", e);
+            throw new IllegalStateException("Supabase Storage upload failed", exception);
         }
+    }
+
+    /**
+     * Immutable result returned to the web controller after statement generation.
+     */
+    public record GeneratedStatement(String filename, byte[] pdfBytes) {
     }
 }

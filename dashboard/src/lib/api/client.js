@@ -64,6 +64,34 @@ export function ledgerCoreFetch(path, options = {}) {
   return baseFetch(LEDGER_CORE_URL, path, options);
 }
 
+/**
+ * Downloads a binary file from a ledger-core endpoint with the current
+ * session token attached. Backend error responses use the same Error
+ * shape as ledgerCoreFetch so callers can render a useful message.
+ */
+export async function ledgerCoreDownload(path, options = {}) {
+  const headers = {
+    ...(await authHeaders()),
+    ...(options.headers ?? {}),
+  };
+  const response = await fetch(`${LEDGER_CORE_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const error = new Error(
+      body?.message ?? body?.detail ?? `Request to ${path} failed (${response.status})`
+    );
+    error.status = response.status;
+    error.code = body?.code;
+    throw error;
+  }
+
+  return response.blob();
+}
+
 /** Same contract as ledgerCoreFetch, pointed at risk-engine instead. */
 export function riskEngineFetch(path, options = {}) {
   return baseFetch(RISK_ENGINE_URL, path, options);
