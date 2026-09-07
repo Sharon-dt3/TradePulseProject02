@@ -510,13 +510,13 @@ services).
       rule-based (e.g. "elevated volatility from a concentrated BTCUSD
       position"), not free-text generation; deterministic from the same
       numbers already computed, so it's testable.
-- [ ] `GET /ledger/transactions` (own) — the underlying journal entries
+- [x] `GET /ledger/transactions` (own) — the underlying journal entries
       (trades, fees, adjustments), not just trades.
 **Verification checkpoint:** a trader can fully self-serve (cancel, view
 positions/trades/prices/portfolio value/risk explanation/transaction
 history) without a single manual SQL query — the standard this whole
 project has been falling back to all session.
-**Status:** not started.
+**Status:** complete — all 6 items live-verified end-to-end (commits 0d74cc8, d07c65f, 2a0e81d, 3b4e9c0, 2e376a9).
 
 ---
 
