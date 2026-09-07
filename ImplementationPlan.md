@@ -661,18 +661,30 @@ require manual SQL for.
       find-then-`remove()` had no active EntityManager transaction and
       threw `TransactionRequiredException` (500) on every delete.
       (commit 1eae853)
-- [ ] `account_grants` create/revoke (Delegated Viewer, Support) and
+- [x] `account_grants` create/revoke (Delegated Viewer, Support) and
       `audit_engagements` create (Auditor) — Admin is the issuer per the
       spec ("Admin manages Support access, creates account grants"); the
       *read* side built in Phases 13/15/16 only ever consumes a grant,
-      never creates one.
+      never creates one. `POST/DELETE /admin/accounts/{accountId}/grants`
+      (+`/admin/grants/{grantId}`) and
+      `POST /admin/accounts/{accountId}/audit-engagements`, gated by two
+      new permissions (`account.grant.manage`, `audit.engagement.manage`,
+      V28). `auditor` is rejected as a grant purpose even though the DB
+      CHECK allows it — Auditor access is audit_engagements' bounded
+      date range instead. Revoke reuses Phase 13's existing
+      "expires_at checked fresh on every read" rule (no separate
+      revoked flag) — AccountGrant.revoke() just pulls expiresAt to
+      now. Live-verified: issue (201), invalid purpose (400), missing
+      account/user (404 each), past expiresAt (400), revoke (204),
+      revoke-nonexistent (404); engagement create (201), invalid date
+      range (400), missing account/user (404 each). (commit b1dcefc)
 - [ ] Admin audit read (`audit.read.all`) — broader than Compliance's
       `audit.read.compliance` from Phase 14.
 **Verification checkpoint:** grant a role, issue a Support grant with a
 reason and expiry, and revoke a grant — all three via API calls, zero
 manual SQL, in the same session that will then use Phase 15's test to
 confirm the grant actually works and actually expires.
-**Status:** in progress — item 1 of 3 complete (commit 1eae853).
+**Status:** in progress — items 1-2 of 3 complete (commits 1eae853, b1dcefc).
 
 ---
 
