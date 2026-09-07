@@ -11,17 +11,19 @@ const POLL_INTERVAL_MS = 5000;
 /**
  * Lists the caller's orders, newest first, straight off GET /orders, and
  * lets them place a new MARKET order via POST /orders (see
- * ledger-core/API.md for both). Data still comes from polling, not the
- * SSE connection below — the gateway's /sse endpoint doesn't fan out
- * real order/risk events yet, only a connected heartbeat, so the
- * ticket-authenticated stream here is proof the auth path works, not
- * yet this view's actual data source.
+ * ledger-core/API.md for both). Order data still comes from polling —
+ * gateway doesn't fan out order events, only risk.updates. The risk
+ * panel below is different: it's the SSE connection's actual data
+ * source now, pushed live by gateway (internal/sse/handler.go)
+ * whenever risk-engine recomputes this account's snapshot after a
+ * trade, not polled.
  */
 export default function OrdersPage() {
   const { user, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState(null);
   const [liveConnected, setLiveConnected] = useState(false);
+  const [riskSnapshot, setRiskSnapshot] = useState(null);
 
   const [symbol, setSymbol] = useState("");
   const [side, setSide] = useState("BUY");
@@ -80,6 +82,9 @@ export default function OrdersPage() {
         }
         eventSource = es;
         eventSource.addEventListener("connected", () => setLiveConnected(true));
+        eventSource.addEventListener("risk_update", (e) => {
+          setRiskSnapshot(JSON.parse(e.data));
+        });
         eventSource.onerror = () => setLiveConnected(false);
       })
       .catch(() => setLiveConnected(false));
@@ -139,6 +144,51 @@ export default function OrdersPage() {
           {liveConnected ? "● live" : "○ connecting..."}
         </span>
       </h1>
+
+      <div
+        style={{
+          border: "1px solid #ccc",
+          borderRadius: 6,
+          padding: 12,
+          marginBottom: 16,
+          maxWidth: 480,
+        }}
+      >
+        <strong>Live risk</strong>{" "}
+        {!riskSnapshot && (
+          <span style={{ color: "#999" }}>
+            waiting for the next trade to trigger a recompute...
+          </span>
+        )}
+        {riskSnapshot && riskSnapshot.insufficientHistory === "True" && (
+          <p style={{ color: "#b8860b", margin: "4px 0 0" }}>
+            Not enough price history yet for a meaningful VaR/Sharpe figure.
+          </p>
+        )}
+        {riskSnapshot && riskSnapshot.insufficientHistory !== "True" && (
+          <table style={{ marginTop: 6 }}>
+            <tbody>
+              <tr>
+                <td style={cellStyle}>VaR (95%)</td>
+                <td style={cellStyle}>{riskSnapshot.var95}</td>
+              </tr>
+              <tr>
+                <td style={cellStyle}>Volatility</td>
+                <td style={cellStyle}>{riskSnapshot.volatility}</td>
+              </tr>
+              <tr>
+                <td style={cellStyle}>Sharpe</td>
+                <td style={cellStyle}>{riskSnapshot.sharpe}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+        {riskSnapshot && (
+          <p style={{ color: "#999", fontSize: 12, margin: "6px 0 0" }}>
+            as of {new Date(riskSnapshot.computedAt).toLocaleString()}
+          </p>
+        )}
+      </div>
 
       <form
         onSubmit={handleSubmit}
