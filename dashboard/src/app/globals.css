@@ -94,8 +94,9 @@ a {
   --color-bg: #f3eeeb;
 }
 
-/* Gives the live market monitor a stronger visual anchor within the trader workspace. */
-.market-pulse-panel {
+/* Keeps Trader's live market and risk workspaces visually aligned. */
+.market-pulse-panel,
+.risk-analysis-panel > div {
   border-color: #b77b88;
   background: linear-gradient(145deg, #f2dfe2 0%, #ead1d6 100%);
   box-shadow: 0 2px 6px rgba(92, 30, 48, 0.1), 0 14px 32px rgba(92, 30, 48, 0.12);
@@ -123,12 +124,6 @@ a {
 }
 
 /* Matches the market monitor emphasis for the Trader's live risk workspace. */
-.risk-analysis-panel > div {
-  border-color: #b77b88;
-  background: linear-gradient(145deg, #f2dfe2 0%, #ead1d6 100%);
-  box-shadow: 0 2px 6px rgba(92, 30, 48, 0.1), 0 14px 32px rgba(92, 30, 48, 0.12);
-}
-
 .risk-analysis-panel > div > div > div.rounded-lg,
 .risk-analysis-panel > div details {
   border-color: #c38f9a;
