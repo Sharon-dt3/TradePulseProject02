@@ -602,16 +602,40 @@ one.
       an account the compliance caller neither owns nor holds a grant
       for - before this item, the same calls threw ACCOUNT_NOT_FOUND
       (404).
-- [ ] Compliance-scoped risk read (`risk.read.all` or reuse an existing
+- [x] Compliance-scoped risk read (`risk.read.all` or reuse an existing
       permission — decide and document which, same as V7's account-read
-      permission-reuse decision).
-- [ ] Compliance audit-history read (`audit.read.compliance`) — case
-      opens/closes plus relevant account activity.
+      permission-reuse decision). Decided to reuse `risk.aggregate.read`
+      (V3, previously held only by risk_manager+admin) rather than add a
+      new permission - GET /risk/aggregate already gates on that single
+      permission with no other code involved, so this was a one-line
+      migration (V30__compliance_risk_aggregate_permission.sql), no
+      risk-engine code changes. Live-verified: compliance token against
+      /risk/aggregate now returns 200 with real firm-wide data.
+- [x] Compliance audit-history read (`audit.read.compliance`) — case
+      opens/closes plus relevant account activity. Decided NOT to add a
+      new permission: compliance already held the broader `audit.read.any`
+      from V3 (seeded alongside admin/auditor), so AuditReadService
+      already accepted a compliance caller - the only gap was that
+      compliance had no endpoint of its own and would've had to know to
+      call /admin/audit-log. Added a role-neutral URL alias,
+      `GET /compliance/audit-log` (new ComplianceAuditLogController,
+      reuses AuditReadService as-is), purely an API-naming correction.
+      Live-verified: unfiltered list, entityType=account filter narrows
+      correctly to 5 matching rows (including this phase's own
+      freeze/unfreeze/statement audit entries), entityType=ACCOUNT
+      (wrong case) correctly returns empty (case-sensitive exact match,
+      not a bug).
 **Verification checkpoint:** freeze an account, confirm a new order from
 that account is rejected while a GET on it still succeeds for Compliance;
 confirm Compliance can see trades/orders belonging to accounts other than
-their own.
-**Status:** not started.
+their own. Both done live: froze testtrader's own account (dual
+trader+compliance role), a MARKET order came back ACCOUNT_FROZEN (HTTP
+201, not a 4xx - rejection is a successful-request outcome); after
+unfreezing, account/positions/trades/orders reads on testviewer's
+account (owned by neither testtrader nor granted to them) all returned
+200 via the new any-tier, where they'd have been 404 before item 3.
+**Status:** complete — all 5 items live-verified end-to-end
+(commits d2a62bd, 8e8f6c3, and this phase's final items 4-5 commit).
 
 ---
 
