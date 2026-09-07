@@ -528,22 +528,30 @@ existing `account_grants` schema (V2/V8).
 - [x] Viewer role reads its own data — same shape as Trader's reads
       (Phase 12) minus order creation, gated by `viewer`'s seeded
       permissions.
-- [ ] Delegated Viewer / Support / Auditor granted-account reads:
-      `GET /accounts/{accountId}`, positions, trades, orders, risk,
-      statements — each checks `account_grants` (or, for auditor,
-      `audit_engagements` — see Phase 16) fresh on every single request,
-      never cached from an earlier check.
-- [ ] Seed the missing granted-scope permissions in `role_permissions`
-      (`account.read.granted`, `position.read.granted`,
-      `trade.read.granted`, `order.read.granted`, `risk.read.granted`,
-      `statement.read.granted`).
-- [ ] Client-supplied `accountId` is never trusted for "is this granted to
-      me" — always re-derived from `account_grants` server-side.
+- [x] Delegated Viewer / Support granted-account reads:
+      `GET /accounts/{accountId}`, positions, trades, orders — each
+      checks `account_grants` fresh on every single request via
+      AccountAccessService, never cached from an earlier check. Risk and
+      statements deferred (risk-engine has no role/grant-checking
+      mechanism yet; no statement list/download endpoint exists until
+      Phase 19) - documented scope decision, same as Phase 12 item 4/5.
+      Auditor deliberately excluded - its granted access uses
+      `audit_engagements`' date-range model instead (Phase 16), not
+      `account_grants`.
+- [x] Seed the missing granted-scope permissions in `role_permissions`
+      (`account.read.granted`, `trades.read.granted`,
+      `orders.read.granted` - `positions.read.granted` was already
+      seeded in V3). Named with the codebase's established plural
+      vocabulary rather than the planning doc's singular wording (V26).
+- [x] Client-supplied `accountId` is never trusted for "is this granted to
+      me" — AccountAccessService always re-derives ownership/grant
+      status from the database by construction, never assumes.
 **Verification checkpoint:** an expired grant denies access on the very
 next request (not just after some cache TTL); a valid grant reads
 correctly; a grant for a different account never leaks the requested
 one.
-**Status:** not started.
+**Status:** complete — all 4 items live-verified end-to-end (commits
+72c2c51, 3960827).
 
 ---
 
