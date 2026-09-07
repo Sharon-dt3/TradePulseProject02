@@ -61,10 +61,10 @@ export default function Home() {
 
         <div className="relative max-w-xl">
           <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-primary">Market intelligence</p>
-          <h1 className="mt-4 text-5xl font-bold leading-[1.05] tracking-tight text-white">
+          <h1 className="mt-4 text-5xl font-bold leading-[1.05] tracking-tight text-black">
             Make every market move with clarity.
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-[#aab9d0]">
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-black">
             A focused workspace for positions, orders, live market context, and risk visibility.
           </p>
         </div>
