@@ -2,6 +2,7 @@ package com.tradepulse.ledgercore.service;
 
 import com.tradepulse.ledgercore.domain.Account;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,4 +16,17 @@ import java.util.UUID;
 public interface AccountService {
 
     Optional<Account> getAccountForUser(UUID userId);
+
+    /**
+     * Same ownership resolution as getAccountForUser, but gated behind
+     * {@code account.read.own} first. getAccountForUser itself stays
+     * permission-free because other services (OrderServiceImpl,
+     * PortfolioServiceImpl, LedgerTransactionServiceImpl) reuse it purely
+     * as an internal ownership lookup - the permission check for those
+     * call sites already lives on their own outward-facing action (e.g.
+     * positions.read.own), so gating getAccountForUser itself would
+     * double-check unrelated permissions. This method is the one the
+     * controller calls for the actual "read my account" action.
+     */
+    Optional<Account> getMyAccount(List<String> roles, UUID userId);
 }

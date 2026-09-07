@@ -40,8 +40,9 @@ public class OrderController {
             Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         UUID userId = UUID.fromString(jwt.getSubject());
+        List<String> roles = jwt.getClaimAsStringList("user_role");
 
-        OrderResultDto result = orderService.placeOrder(userId, request);
+        OrderResultDto result = orderService.placeOrder(roles, userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
@@ -49,8 +50,9 @@ public class OrderController {
     public ResponseEntity<List<OrderResultDto>> listOrders(Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         UUID userId = UUID.fromString(jwt.getSubject());
+        List<String> roles = jwt.getClaimAsStringList("user_role");
 
-        return ResponseEntity.ok(orderService.listOrders(userId));
+        return ResponseEntity.ok(orderService.listOrders(roles, userId));
     }
 
     @PostMapping("/orders/{orderId}/cancel")

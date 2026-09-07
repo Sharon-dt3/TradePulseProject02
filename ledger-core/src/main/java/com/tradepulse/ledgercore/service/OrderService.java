@@ -23,19 +23,23 @@ import com.tradepulse.ledgercore.web.dto.OrderResultDto;
 public interface OrderService {
 
     /**
+     * @param roles   the caller's roles (jwt "user_role" claim), checked
+     *                against {@code orders.create} before anything else
      * @param userId  the caller, taken from jwt.sub — this is also who
      *                owns the account the order is placed against, since
      *                Phase 3 has no delegated-trading concept yet.
      * @throws AccountNotFoundException if userId has no account
      */
-    OrderResultDto placeOrder(UUID userId, OrderRequestDto request);
+    OrderResultDto placeOrder(List<String> roles, UUID userId, OrderRequestDto request);
 
     /**
      * Every order the caller's account has ever placed, newest first.
      *
+     * @param roles the caller's roles (jwt "user_role" claim), checked
+     *              against {@code orders.read.own} before anything else
      * @throws AccountNotFoundException if userId has no account
      */
-    List<OrderResultDto> listOrders(UUID userId);
+    List<OrderResultDto> listOrders(List<String> roles, UUID userId);
 
     /**
      * Called once per tick (by MarketTickConsumer, after it updates

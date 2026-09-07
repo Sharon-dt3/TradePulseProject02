@@ -38,6 +38,8 @@ import com.tradepulse.ledgercore.web.dto.OrderResultDto;
 @Service
 public class OrderServiceImpl implements OrderService {
 
+    private static final String ORDER_CREATE_PERMISSION = "orders.create";
+    private static final String ORDER_READ_PERMISSION = "orders.read.own";
     private static final String ORDER_CANCEL_PERMISSION = "orders.cancel.own";
 
     private final AccountService accountService;
@@ -102,7 +104,8 @@ public class OrderServiceImpl implements OrderService {
      * work needs a separate one of its own too.
      */
     @Override
-    public OrderResultDto placeOrder(UUID userId, OrderRequestDto request) {
+    public OrderResultDto placeOrder(List<String> roles, UUID userId, OrderRequestDto request) {
+        permissionService.requirePermission(roles, ORDER_CREATE_PERMISSION);
         validateLimitFields(request);
 
         Account account = accountService.getAccountForUser(userId)
@@ -346,7 +349,8 @@ public class OrderServiceImpl implements OrderService {
      * why that's persisted now).
      */
     @Override
-    public List<OrderResultDto> listOrders(UUID userId) {
+    public List<OrderResultDto> listOrders(List<String> roles, UUID userId) {
+        permissionService.requirePermission(roles, ORDER_READ_PERMISSION);
         Account account = accountService.getAccountForUser(userId)
                 .orElseThrow(() -> AccountNotFoundException.forUserId(userId));
 
