@@ -13,7 +13,7 @@ const ORDER_STATUSES = ["ALL", "WORKING", "FILLED", "REJECTED", "CANCELLED", "EX
  * Renders searchable, status-filtered order activity. Cancellation is exposed
  * only for working orders and is delegated to the caller's authorized API flow.
  */
-export default function OrdersTable({ orders, loading, onCancel, onTrade }) {
+export default function OrdersTable({ orders, loading, onCancel }) {
   const [cancellingId, setCancellingId] = useState(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -57,17 +57,12 @@ export default function OrdersTable({ orders, loading, onCancel, onTrade }) {
     { key: "executedAt", label: "Executed", render: (row) => formatDate(row.executedAt) },
   ];
 
-  if (onCancel || onTrade) {
+  if (onCancel) {
     columns.push({
       key: "actions",
       label: "Actions",
       render: (row) => (
         <div className="flex items-center gap-2">
-          {onTrade && (
-            <Button type="button" size="sm" variant="secondary" onClick={() => onTrade(row.symbol)}>
-              Trade
-            </Button>
-          )}
           {onCancel && CANCELLABLE_STATUSES.has(row.status) && (
             <Button
               type="button"

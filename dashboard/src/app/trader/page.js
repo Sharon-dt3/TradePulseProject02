@@ -293,7 +293,6 @@ function TraderWorkspace() {
               orders={displayedOrders}
               loading={orders === null}
               onCancel={handleCancel}
-              onTrade={handleTradeSymbol}
             />
           )}
           {tab === "Positions" && (
