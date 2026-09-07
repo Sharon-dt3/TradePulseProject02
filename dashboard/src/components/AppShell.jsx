@@ -21,7 +21,7 @@ export default function AppShell({ children }) {
   const initial = user.email?.[0]?.toUpperCase() ?? "?";
   const nav = (
     <nav aria-label="Primary navigation" className="space-y-1 px-3 py-4">
-      <p className="px-3 pb-2 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-[#886d74]">
+      <p className="px-3 pb-2 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-white/75">
         Your workspace
       </p>
       {navItems.map((item) => {
@@ -36,12 +36,12 @@ export default function AppShell({ children }) {
             className={`group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold ${
               active
                 ? "bg-[#f5dfe2] text-[#71192f]"
-                : "text-[#5f4b51] hover:bg-[#f9eeee] hover:text-[#4a1423]"
+                : "text-white hover:bg-[#62162b] hover:text-white"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                active ? "bg-primary" : "bg-[#c9afb4] group-hover:bg-[#9c5d6c]"
+                active ? "bg-primary" : "bg-[#edcbd2] group-hover:bg-white"
               }`}
             />
             {item.label}
@@ -49,7 +49,7 @@ export default function AppShell({ children }) {
         );
       })}
       {navItems.length === 0 && (
-        <p className="px-3 py-2 text-xs text-muted">No roles assigned yet.</p>
+        <p className="px-3 py-2 text-xs text-white/75">No roles assigned yet.</p>
       )}
     </nav>
   );
