@@ -678,13 +678,20 @@ require manual SQL for.
       account/user (404 each), past expiresAt (400), revoke (204),
       revoke-nonexistent (404); engagement create (201), invalid date
       range (400), missing account/user (404 each). (commit b1dcefc)
-- [ ] Admin audit read (`audit.read.all`) — broader than Compliance's
-      `audit.read.compliance` from Phase 14.
+- [x] Admin audit read (`GET /admin/audit-log`, optional
+      `entityType` filter, 200 most recent rows) — reuses `audit.read.any`
+      (already seeded to admin/compliance/auditor back in V3, no new
+      migration needed). Deliberately the unrestricted, all-entries
+      view; Compliance's own narrower scope is still Phase 14's to add.
+      Live-verified: unfiltered list, entityType filter narrows
+      correctly, non-matching filter -> empty array (200).
+      (commit a0fbc15)
 **Verification checkpoint:** grant a role, issue a Support grant with a
 reason and expiry, and revoke a grant — all three via API calls, zero
 manual SQL, in the same session that will then use Phase 15's test to
 confirm the grant actually works and actually expires.
-**Status:** in progress — items 1-2 of 3 complete (commits 1eae853, b1dcefc).
+**Status:** complete — all 3 items live-verified end-to-end
+(commits 1eae853, b1dcefc, a0fbc15).
 
 ---
 
