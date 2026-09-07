@@ -31,7 +31,7 @@ function Movement({ value }) {
 
 function MetricCard({ label, value, detail, tone = "text-fg" }) {
   return (
-    <div className="rounded-xl border border-line bg-bg/70 p-3">
+    <div className="portfolio-command-center-metric rounded-xl border border-line bg-bg/70 p-3">
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted">{label}</p>
       <p className={`mt-1 font-serif-display text-xl font-semibold tabular-nums ${tone}`}>{value}</p>
       <p className="mt-1 text-xs text-muted">{detail}</p>
@@ -113,6 +113,7 @@ export default function PortfolioCommandCenter({
       <Card
         title="Portfolio command center"
         action={<Badge tone={account.frozen ? "danger" : "success"}>{account.frozen ? "Trading restricted" : "Account active"}</Badge>}
+        className="portfolio-command-center"
       >
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <MetricCard label="Portfolio value" value={formatMoney(portfolioValue)} detail="Cash plus quoted holdings" />
