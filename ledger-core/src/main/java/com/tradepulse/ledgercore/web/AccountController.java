@@ -1,11 +1,13 @@
 package com.tradepulse.ledgercore.web;
 
+import com.tradepulse.ledgercore.domain.Account;
 import com.tradepulse.ledgercore.service.AccountService;
 import com.tradepulse.ledgercore.web.dto.AccountResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -34,5 +36,16 @@ public class AccountController {
                 .map(AccountResponse::from)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/accounts/{accountId}")
+    public ResponseEntity<AccountResponse> getAccount(
+            @PathVariable UUID accountId, Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        UUID callerId = UUID.fromString(jwt.getSubject());
+        List<String> roles = jwt.getClaimAsStringList("user_role");
+
+        Account account = accountService.getAccount(roles, callerId, accountId);
+        return ResponseEntity.ok(AccountResponse.from(account));
     }
 }

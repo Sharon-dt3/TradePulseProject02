@@ -12,13 +12,17 @@ import java.util.UUID;
 public class AccountServiceImpl implements AccountService {
 
     private static final String ACCOUNT_READ_PERMISSION = "account.read.own";
+    private static final String ACCOUNT_READ_GRANTED_PERMISSION = "account.read.granted";
 
     private final AccountRepository accountRepository;
     private final PermissionService permissionService;
+    private final AccountAccessService accountAccessService;
 
-    public AccountServiceImpl(AccountRepository accountRepository, PermissionService permissionService) {
+    public AccountServiceImpl(AccountRepository accountRepository, PermissionService permissionService,
+                               AccountAccessService accountAccessService) {
         this.accountRepository = accountRepository;
         this.permissionService = permissionService;
+        this.accountAccessService = accountAccessService;
     }
 
     @Override
@@ -30,5 +34,11 @@ public class AccountServiceImpl implements AccountService {
     public Optional<Account> getMyAccount(List<String> roles, UUID userId) {
         permissionService.requirePermission(roles, ACCOUNT_READ_PERMISSION);
         return getAccountForUser(userId);
+    }
+
+    @Override
+    public Account getAccount(List<String> roles, UUID callerId, UUID accountId) {
+        return accountAccessService.resolveReadableAccount(
+                roles, callerId, accountId, ACCOUNT_READ_PERMISSION, ACCOUNT_READ_GRANTED_PERMISSION);
     }
 }

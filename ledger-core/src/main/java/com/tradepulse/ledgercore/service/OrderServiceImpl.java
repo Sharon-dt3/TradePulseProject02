@@ -41,6 +41,7 @@ public class OrderServiceImpl implements OrderService {
     private static final String ORDER_CREATE_PERMISSION = "orders.create";
     private static final String ORDER_READ_PERMISSION = "orders.read.own";
     private static final String ORDER_CANCEL_PERMISSION = "orders.cancel.own";
+    private static final String ORDER_READ_GRANTED_PERMISSION = "orders.read.granted";
 
     private final AccountService accountService;
     private final AccountRepository accountRepository;
@@ -52,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
     private final TradeRepository tradeRepository;
     private final AuditLogRepository auditLogRepository;
     private final PermissionService permissionService;
+    private final AccountAccessService accountAccessService;
     private final long maxPriceAgeMs;
     private final long limitOrderDefaultTtlHours;
     private final TransactionTemplate requiresNewTransactionTemplate;
@@ -68,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
             TradeRepository tradeRepository,
             AuditLogRepository auditLogRepository,
             PermissionService permissionService,
+            AccountAccessService accountAccessService,
             @Value("${ledger.max-price-age-ms}") long maxPriceAgeMs,
             @Value("${ledger.limit-order-default-ttl-hours}") long limitOrderDefaultTtlHours,
             PlatformTransactionManager transactionManager
@@ -82,6 +85,7 @@ public class OrderServiceImpl implements OrderService {
         this.tradeRepository = tradeRepository;
         this.auditLogRepository = auditLogRepository;
         this.permissionService = permissionService;
+        this.accountAccessService = accountAccessService;
         this.maxPriceAgeMs = maxPriceAgeMs;
         this.limitOrderDefaultTtlHours = limitOrderDefaultTtlHours;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
@@ -353,8 +357,18 @@ public class OrderServiceImpl implements OrderService {
         permissionService.requirePermission(roles, ORDER_READ_PERMISSION);
         Account account = accountService.getAccountForUser(userId)
                 .orElseThrow(() -> AccountNotFoundException.forUserId(userId));
+        return buildOrderResults(account.getId());
+    }
 
-        List<Order> orders = orderRepository.findByAccountIdOrderByCreatedAtDesc(account.getId());
+    @Override
+    public List<OrderResultDto> listOrdersForAccount(List<String> roles, UUID callerId, UUID accountId) {
+        Account account = accountAccessService.resolveReadableAccount(
+                roles, callerId, accountId, ORDER_READ_PERMISSION, ORDER_READ_GRANTED_PERMISSION);
+        return buildOrderResults(account.getId());
+    }
+
+    private List<OrderResultDto> buildOrderResults(UUID accountId) {
+        List<Order> orders = orderRepository.findByAccountIdOrderByCreatedAtDesc(accountId);
 
         List<UUID> filledOrderIds = orders.stream()
                 .filter(o -> o.getStatus() == Order.Status.FILLED)

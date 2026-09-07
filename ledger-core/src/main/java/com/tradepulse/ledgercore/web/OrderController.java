@@ -55,6 +55,16 @@ public class OrderController {
         return ResponseEntity.ok(orderService.listOrders(roles, userId));
     }
 
+    @GetMapping("/accounts/{accountId}/orders")
+    public ResponseEntity<List<OrderResultDto>> listOrdersForAccount(
+            @PathVariable UUID accountId, Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        UUID callerId = UUID.fromString(jwt.getSubject());
+        List<String> roles = jwt.getClaimAsStringList("user_role");
+
+        return ResponseEntity.ok(orderService.listOrdersForAccount(roles, callerId, accountId));
+    }
+
     @PostMapping("/orders/{orderId}/cancel")
     public ResponseEntity<OrderResultDto> cancelOrder(
             @PathVariable UUID orderId,

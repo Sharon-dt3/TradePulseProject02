@@ -70,4 +70,16 @@ public interface OrderService {
      * @throws OrderNotCancellableException if the order isn't WORKING
      */
     OrderResultDto cancelOrder(List<String> roles, UUID userId, UUID orderId);
+
+    /**
+     * Orders for an arbitrary accountId, reachable either because the
+     * caller owns it ({@code orders.read.own}) or holds a live
+     * account_grants row for it ({@code orders.read.granted}) -
+     * re-checked fresh on every call via AccountAccessService.
+     *
+     * @throws AccountNotFoundException if accountId doesn't exist, or the
+     *                                    caller can't read it (same
+     *                                    exception either way, on purpose)
+     */
+    List<OrderResultDto> listOrdersForAccount(List<String> roles, UUID callerId, UUID accountId);
 }

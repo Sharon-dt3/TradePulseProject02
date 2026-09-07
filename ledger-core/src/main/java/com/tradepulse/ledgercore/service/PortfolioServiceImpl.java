@@ -16,16 +16,20 @@ public class PortfolioServiceImpl implements PortfolioService {
 
     private static final String POSITIONS_READ_OWN_PERMISSION = "positions.read.own";
     private static final String TRADES_READ_OWN_PERMISSION = "trades.read.own";
+    private static final String POSITIONS_READ_GRANTED_PERMISSION = "positions.read.granted";
+    private static final String TRADES_READ_GRANTED_PERMISSION = "trades.read.granted";
 
     private final AccountService accountService;
     private final TradeRepository tradeRepository;
     private final PermissionService permissionService;
+    private final AccountAccessService accountAccessService;
 
     public PortfolioServiceImpl(AccountService accountService, TradeRepository tradeRepository,
-                                 PermissionService permissionService) {
+                                 PermissionService permissionService, AccountAccessService accountAccessService) {
         this.accountService = accountService;
         this.tradeRepository = tradeRepository;
         this.permissionService = permissionService;
+        this.accountAccessService = accountAccessService;
     }
 
     @Override
@@ -35,7 +39,18 @@ public class PortfolioServiceImpl implements PortfolioService {
         Account account = accountService.getAccountForUser(userId)
                 .orElseThrow(() -> AccountNotFoundException.forUserId(userId));
 
-        return tradeRepository.currentPositionsByAccount(account.getId()).stream()
+        return positionsForAccountId(account.getId());
+    }
+
+    @Override
+    public List<PositionDto> listPositionsForAccount(List<String> roles, UUID callerId, UUID accountId) {
+        Account account = accountAccessService.resolveReadableAccount(
+                roles, callerId, accountId, POSITIONS_READ_OWN_PERMISSION, POSITIONS_READ_GRANTED_PERMISSION);
+        return positionsForAccountId(account.getId());
+    }
+
+    private List<PositionDto> positionsForAccountId(UUID accountId) {
+        return tradeRepository.currentPositionsByAccount(accountId).stream()
                 .map(PositionDto::from)
                 .toList();
     }
@@ -47,7 +62,18 @@ public class PortfolioServiceImpl implements PortfolioService {
         Account account = accountService.getAccountForUser(userId)
                 .orElseThrow(() -> AccountNotFoundException.forUserId(userId));
 
-        return tradeRepository.findByAccountIdOrderByExecutedAtDesc(account.getId()).stream()
+        return tradesForAccountId(account.getId());
+    }
+
+    @Override
+    public List<TradeResultDto> listTradesForAccount(List<String> roles, UUID callerId, UUID accountId) {
+        Account account = accountAccessService.resolveReadableAccount(
+                roles, callerId, accountId, TRADES_READ_OWN_PERMISSION, TRADES_READ_GRANTED_PERMISSION);
+        return tradesForAccountId(account.getId());
+    }
+
+    private List<TradeResultDto> tradesForAccountId(UUID accountId) {
+        return tradeRepository.findByAccountIdOrderByExecutedAtDesc(accountId).stream()
                 .map(TradeResultDto::from)
                 .toList();
     }

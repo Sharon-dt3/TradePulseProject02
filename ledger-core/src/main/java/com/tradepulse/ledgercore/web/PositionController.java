@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tradepulse.ledgercore.service.PortfolioService;
@@ -28,5 +29,15 @@ public class PositionController {
         List<String> roles = jwt.getClaimAsStringList("user_role");
 
         return ResponseEntity.ok(portfolioService.listPositions(roles, userId));
+    }
+
+    @GetMapping("/accounts/{accountId}/positions")
+    public ResponseEntity<List<PositionDto>> listPositionsForAccount(
+            @PathVariable UUID accountId, Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        UUID callerId = UUID.fromString(jwt.getSubject());
+        List<String> roles = jwt.getClaimAsStringList("user_role");
+
+        return ResponseEntity.ok(portfolioService.listPositionsForAccount(roles, callerId, accountId));
     }
 }

@@ -34,4 +34,19 @@ public interface PortfolioService {
      * @throws AccountNotFoundException if userId has no account
      */
     List<TradeResultDto> listTrades(List<String> roles, UUID userId);
+
+    /**
+     * Positions for an arbitrary accountId, reachable either because the
+     * caller owns it ({@code positions.read.own}) or holds a live
+     * account_grants row for it ({@code positions.read.granted}) -
+     * re-checked fresh on every call via AccountAccessService.
+     *
+     * @throws AccountNotFoundException if accountId doesn't exist, or the
+     *                                    caller can't read it (same
+     *                                    exception either way, on purpose)
+     */
+    List<PositionDto> listPositionsForAccount(List<String> roles, UUID callerId, UUID accountId);
+
+    /** Trades version of {@link #listPositionsForAccount}. */
+    List<TradeResultDto> listTradesForAccount(List<String> roles, UUID callerId, UUID accountId);
 }
