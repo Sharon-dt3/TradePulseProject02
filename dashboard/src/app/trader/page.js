@@ -23,6 +23,7 @@ import RiskPanel from "@/components/features/RiskPanel";
 import TabBar from "@/components/ui/TabBar";
 import { ledgerCoreFetch } from "@/lib/api/client";
 import { formatMoney } from "@/lib/format";
+import { useDemoEquityPrices } from "@/lib/useDemoEquityPrices";
 import { useMarketPriceHistory } from "@/lib/useMarketPriceHistory";
 
 const TABS = ["Orders", "Positions", "Trades", "Transactions"];
@@ -114,7 +115,13 @@ function MarketPulseCard({ symbol, quote, points }) {
         <PriceTrendChart symbol={symbol} points={points} />
       </div>
       <p className={`mt-2 text-xs ${stale ? "text-warning" : "text-muted"}`}>
-        {!quote ? "Awaiting first quote" : stale ? `Last quote ${Math.round(quote.ageMs / 1000)}s ago` : "Live quote"}
+        {!quote
+          ? "Awaiting first quote"
+          : quote.simulated
+            ? "Simulated demo data"
+            : stale
+              ? `Last quote ${Math.round(quote.ageMs / 1000)}s ago`
+              : "Live quote"}
       </p>
     </Link>
   );
@@ -129,6 +136,16 @@ function TraderWorkspace() {
   const [showWorkingOrders, setShowWorkingOrders] = useState(false);
   const [error, setError] = useState(null);
   const { latest: marketPrices, history: marketHistory } = useMarketPriceHistory();
+  const {
+    enabled: demoEquitiesEnabled,
+    latest: demoEquityPrices,
+    history: demoEquityHistory,
+  } = useDemoEquityPrices();
+  const marketMonitorPrices = [
+    ...(marketPrices ?? []).filter((quote) => !demoEquityPrices.some((demoQuote) => demoQuote.symbol === quote.symbol)),
+    ...demoEquityPrices,
+  ];
+  const marketMonitorHistory = { ...marketHistory, ...demoEquityHistory };
 
   const loadAccount = () => ledgerCoreFetch("/accounts/me").then(setAccount).catch((error) => setError(error.message));
   const loadOrders = () => ledgerCoreFetch("/orders").then(setOrders).catch((error) => setError(error.message));
@@ -219,8 +236,17 @@ function TraderWorkspace() {
             </button>
           </div>
         </Card>
-        <Card title="Market pulse" action={<span className="text-xs text-muted">live quote monitor</span>} className="xl:col-span-2">
-          {!marketPrices ? (
+        <Card
+          title="Market pulse"
+          action={<span className="text-xs text-muted">{demoEquitiesEnabled ? "live crypto + simulated equities" : "live quote monitor"}</span>}
+          className="xl:col-span-2"
+        >
+          {demoEquitiesEnabled && (
+            <p className="mb-3 rounded-lg border border-warning/30 bg-warning-soft px-3 py-2 text-xs leading-relaxed text-warning">
+              Demo mode: equity movements are simulated for display only. They are not live market data and cannot affect orders, positions, portfolio values, or risk calculations.
+            </p>
+          )}
+          {!marketPrices && !demoEquitiesEnabled ? (
             <div className="grid grid-cols-3 gap-3">
               {Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg bg-line/60" />)}
             </div>
@@ -230,8 +256,8 @@ function TraderWorkspace() {
                 <MarketPulseCard
                   key={symbol}
                   symbol={symbol}
-                  quote={marketPrices.find((quote) => quote.symbol === symbol)}
-                  points={marketHistory[symbol] ?? []}
+                  quote={marketMonitorPrices.find((quote) => quote.symbol === symbol)}
+                  points={marketMonitorHistory[symbol] ?? []}
                 />
               ))}
             </div>
@@ -269,7 +295,7 @@ function TraderWorkspace() {
       </div>
 
       <div className="mt-4">
-        <MarketPriceSparklines latest={marketPrices} history={marketHistory} />
+        <MarketPriceSparklines latest={marketMonitorPrices} history={marketMonitorHistory} />
       </div>
     </div>
   );
