@@ -85,7 +85,7 @@ export default function Home() {
           </div>
 
           <p className="text-[0.67rem] font-bold uppercase tracking-[0.15em] text-primary">Secure access</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">Welcome back</h1>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#741b32]">Welcome back</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted">Sign in to open your personalized trading workspace.</p>
 
           <form onSubmit={handleSignIn} className="mt-7 space-y-4">
@@ -112,7 +112,7 @@ export default function Home() {
             </FormField>
             <Alert tone="danger" onDismiss={() => setError(null)}>{error}</Alert>
             <Button type="submit" loading={submitting} className="mt-2 w-full">
-              Open workspace
+              Sign in
             </Button>
           </form>
         </div>
