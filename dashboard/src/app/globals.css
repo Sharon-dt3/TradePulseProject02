@@ -3,35 +3,36 @@
 /**
  * Shared visual tokens for the TradePulse dashboard.
  *
- * Investor-facing pages use calm neutral surfaces, navy typography, and a
- * restrained teal action color. Semantic colors are reserved for market
- * movement, account health, and risk states rather than general decoration.
+ * The trading workspace uses layered navy and slate surfaces so dense market
+ * data stays legible without relying on a white application canvas. Semantic
+ * colors remain reserved for actions, market movement, account health, and
+ * risk states rather than general decoration.
  */
 @theme {
-  --color-bg: #f4f6f8;
-  --color-fg: #14243a;
-  --color-surface: #ffffff;
-  --color-line: #d9e0e8;
-  --color-muted: #617187;
+  --color-bg: #08111f;
+  --color-fg: #e7eef8;
+  --color-surface: #111d30;
+  --color-line: #273952;
+  --color-muted: #93a6c1;
 
-  --color-primary: #007c71;
-  --color-primary-fg: #ffffff;
-  --color-primary-soft: #e5f4f1;
+  --color-primary: #2dd4bf;
+  --color-primary-fg: #06251f;
+  --color-primary-soft: #123d3e;
 
-  --color-success: #16784f;
-  --color-success-bg: #e7f6ee;
-  --color-warning: #9a5a09;
-  --color-warning-bg: #fff4df;
-  --color-danger: #b4233d;
-  --color-danger-bg: #ffedf0;
-  --color-info: #1c5d99;
-  --color-info-bg: #eaf3fb;
+  --color-success: #45d6a6;
+  --color-success-bg: #10382f;
+  --color-warning: #f7bf58;
+  --color-warning-bg: #3e3017;
+  --color-danger: #fb7185;
+  --color-danger-bg: #421f30;
+  --color-info: #79b8ff;
+  --color-info-bg: #182f4e;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 
-  --shadow-card: 0 1px 2px rgba(20, 36, 58, 0.03), 0 8px 24px rgba(20, 36, 58, 0.06);
-  --shadow-card-hover: 0 2px 6px rgba(20, 36, 58, 0.05), 0 12px 30px rgba(20, 36, 58, 0.09);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.28), 0 12px 28px rgba(0, 0, 0, 0.2);
+  --shadow-card-hover: 0 2px 6px rgba(0, 0, 0, 0.32), 0 18px 38px rgba(0, 0, 0, 0.28);
 }
 
 html,
@@ -76,8 +77,8 @@ a {
 }
 
 ::selection {
-  color: #ffffff;
-  background: #007c71;
+  color: #06251f;
+  background: #2dd4bf;
 }
 
 .font-serif-display {
@@ -91,7 +92,7 @@ a {
 
 /* Keeps active trading tools focused without using a separate application. */
 .trade-workspace {
-  --color-bg: #eef2f5;
+  --color-bg: #0b1525;
 }
 
 @media (prefers-reduced-motion: reduce) {

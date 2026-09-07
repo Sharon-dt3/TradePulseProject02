@@ -3,7 +3,7 @@ const TONES = {
   warning: "bg-warning-bg text-warning border-warning/20",
   danger: "bg-danger-bg text-danger border-danger/20",
   info: "bg-info-bg text-info border-info/20",
-  neutral: "bg-primary-soft text-fg border-line",
+  neutral: "bg-[#1a2a42] text-[#c5d4e8] border-[#344a69]",
 };
 
 export default function Badge({ tone = "neutral", children }) {
