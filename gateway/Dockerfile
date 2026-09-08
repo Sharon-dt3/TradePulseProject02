@@ -1,5 +1,5 @@
 # Compile a static gateway binary and run it from a minimal non-root image.
-FROM golang:1.23-bookworm AS build
+FROM golang:1.26.6-bookworm AS build
 
 WORKDIR /workspace
 COPY go.mod go.sum ./
