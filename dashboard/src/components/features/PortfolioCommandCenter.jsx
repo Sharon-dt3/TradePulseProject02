@@ -91,7 +91,6 @@ export default function PortfolioCommandCenter({
   const selectedPosition = holdings.positions.find((position) => position.symbol === selectedSymbol) ?? null;
   const cash = Number(account?.cashBalance ?? 0);
   const portfolioValue = cash + holdings.holdingsValue;
-  const activeOrders = orders.filter((order) => order.status === "WORKING");
   const liveQuotes = prices.filter((quote) => Number(quote.ageMs) <= STALE_AFTER_MS).length;
   const movers = [...holdings.positions]
     .filter((position) => position.movement !== null)
@@ -120,11 +119,10 @@ export default function PortfolioCommandCenter({
         action={<Badge tone={account.frozen ? "danger" : "success"}>{account.frozen ? "Trading restricted" : "Account active"}</Badge>}
         className="portfolio-command-center"
       >
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <MetricCard label="Portfolio value" value={formatMoney(portfolioValue)} detail="Cash plus quoted holdings" variant="portfolio" icon="◈" />
           <MetricCard label="Cash available" value={formatMoney(cash)} detail={cash < 0 ? "Review buying power" : "Available before settlement"} tone={cash < 0 ? "text-danger" : "text-fg"} variant={cash < 0 ? "cash-warning" : "cash"} icon="$" />
           <MetricCard label="Holdings" value={formatMoney(holdings.holdingsValue)} detail={`${holdings.positions.length} open position${holdings.positions.length === 1 ? "" : "s"}`} variant="holdings" icon="◫" />
-          <MetricCard label="Open orders" value={formatNumber(activeOrders.length, 0)} detail={activeOrders.length ? "Working instructions" : "No active instructions"} variant="orders" icon="↗" />
         </div>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(14rem,0.9fr)]">
