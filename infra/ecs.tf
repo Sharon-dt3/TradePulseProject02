@@ -60,8 +60,10 @@ locals {
   backend_secrets = [
     { name = "DATABASE_URL", valueFrom = "${var.supabase_runtime_secret_arn}:DATABASE_URL::" },
     { name = "SPRING_DATASOURCE_URL", valueFrom = "${var.supabase_runtime_secret_arn}:DATABASE_URL::" },
+    { name = "SPRING_DATASOURCE_USERNAME", valueFrom = "${var.supabase_runtime_secret_arn}:DATABASE_USERNAME::" },
     { name = "SPRING_DATASOURCE_PASSWORD", valueFrom = "${var.supabase_runtime_secret_arn}:DATABASE_PASSWORD::" },
     { name = "SPRING_FLYWAY_URL", valueFrom = "${var.supabase_runtime_secret_arn}:MIGRATION_DATABASE_URL::" },
+    { name = "SPRING_FLYWAY_USERNAME", valueFrom = "${var.supabase_runtime_secret_arn}:MIGRATION_DATABASE_USERNAME::" },
     { name = "SPRING_FLYWAY_PASSWORD", valueFrom = "${var.supabase_runtime_secret_arn}:DATABASE_PASSWORD::" },
     { name = "SUPABASE_URL", valueFrom = "${var.supabase_runtime_secret_arn}:SUPABASE_URL::" },
     { name = "SUPABASE_SERVICE_ROLE_KEY", valueFrom = "${var.supabase_runtime_secret_arn}:SUPABASE_SERVICE_ROLE_KEY::" },
