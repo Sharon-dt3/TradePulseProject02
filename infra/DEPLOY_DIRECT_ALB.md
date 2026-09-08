@@ -75,17 +75,18 @@ Create `tradepulse/production/supabase` with these keys:
 
 | Key | Value source |
 | --- | --- |
-| `DATABASE_URL` | Supabase Transaction Pooler JDBC connection URL |
+| `DATABASE_URL` | Full Supabase Transaction Pooler PostgreSQL URL, including the pooler username and URL-encoded password; used by risk-engine |
+| `DATABASE_JDBC_URL` | Transaction Pooler JDBC URL without embedded credentials; used by ledger-core |
 | `DATABASE_USERNAME` | Transaction Pooler username |
 | `DATABASE_PASSWORD` | Database password |
-| `MIGRATION_DATABASE_URL` | Supabase direct PostgreSQL JDBC connection URL |
+| `MIGRATION_DATABASE_URL` | Supabase direct PostgreSQL JDBC connection URL, without embedded credentials |
 | `MIGRATION_DATABASE_USERNAME` | Direct PostgreSQL username |
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key |
 | `SUPABASE_JWKS_URL` | `<SUPABASE_URL>/auth/v1/.well-known/jwks.json` |
 | `SUPABASE_JWT_ISSUER` | `<SUPABASE_URL>/auth/v1` |
 
-The application uses the transaction pooler for normal traffic and the direct connection for Flyway migrations.
+The application uses the Transaction Pooler for normal traffic and the direct connection for Flyway migrations. `DATABASE_URL` is consumed by the Python risk-engine and must remain a normal PostgreSQL URL, for example `postgresql://USER:URL_ENCODED_PASSWORD@HOST:6543/postgres`. `DATABASE_JDBC_URL` is consumed by ledger-core and must be the matching credential-free JDBC URL, for example `jdbc:postgresql://HOST:6543/postgres`.
 
 ### Finnhub secret
 
