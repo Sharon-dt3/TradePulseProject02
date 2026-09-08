@@ -289,6 +289,134 @@ a {
   position: relative;
 }
 
+/* The desktop navigation carries quiet market motion without competing with page data. */
+.sidebar-live-panel {
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
+
+.sidebar-live-panel::before {
+  background:
+    linear-gradient(115deg, transparent 0 42%, rgba(255, 224, 230, 0.08) 42.4% 42.8%, transparent 43.2%),
+    linear-gradient(65deg, transparent 0 72%, rgba(255, 224, 230, 0.06) 72.4% 72.8%, transparent 73.2%);
+  content: "";
+  inset: 0;
+  opacity: 0.72;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.sidebar-live-orb {
+  border-radius: 9999px;
+  filter: blur(12px);
+  opacity: 0.58;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.sidebar-live-orb-top {
+  animation: sidebar-orb-drift 12s ease-in-out infinite alternate;
+  background: rgba(246, 162, 179, 0.38);
+  height: 13rem;
+  right: -8rem;
+  top: -5rem;
+  width: 13rem;
+}
+
+.sidebar-live-orb-bottom {
+  animation: sidebar-orb-drift 15s ease-in-out infinite alternate-reverse;
+  background: rgba(61, 6, 23, 0.52);
+  bottom: -7rem;
+  height: 15rem;
+  left: -9rem;
+  width: 15rem;
+}
+
+.sidebar-market-scan {
+  animation: sidebar-market-scan 7s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 236, 239, 0.22), transparent);
+  height: 1px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 23%;
+  z-index: 0;
+}
+
+.sidebar-brand-panel,
+.sidebar-navigation-link,
+.sidebar-session-card {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-brand-panel {
+  background: linear-gradient(120deg, rgba(70, 7, 27, 0.16), transparent);
+}
+
+.sidebar-brand-mark {
+  box-shadow: 0 0 0 4px rgba(255, 225, 230, 0.08), 0 8px 18px rgba(49, 5, 19, 0.24);
+}
+
+.sidebar-navigation-label {
+  opacity: 0.86;
+}
+
+.sidebar-navigation-link {
+  border: 1px solid transparent;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.sidebar-navigation-link:hover {
+  border-color: rgba(255, 225, 230, 0.18);
+  box-shadow: 0 7px 16px rgba(53, 6, 21, 0.16);
+  transform: translateX(3px);
+}
+
+.sidebar-navigation-link-active {
+  box-shadow: 0 8px 18px rgba(53, 6, 21, 0.2);
+}
+
+.sidebar-navigation-link-active::before {
+  background: #8b203c;
+  border-radius: 9999px;
+  content: "";
+  height: 1.45rem;
+  left: -0.7rem;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.22rem;
+}
+
+.sidebar-session-card {
+  box-shadow: inset 0 1px 0 rgba(255, 226, 231, 0.1), 0 10px 22px rgba(53, 6, 21, 0.16);
+}
+
+.sidebar-session-dot {
+  animation: sidebar-session-pulse 1.7s ease-in-out infinite;
+}
+
+@keyframes sidebar-orb-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-1.25rem, 2rem, 0) scale(1.14); }
+}
+
+@keyframes sidebar-market-scan {
+  0%, 100% { opacity: 0; transform: translateY(-2rem); }
+  20%, 75% { opacity: 0.7; }
+  50% { transform: translateY(31rem); }
+}
+
+@keyframes sidebar-session-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(129, 223, 179, 0.3); transform: scale(0.9); }
+  50% { box-shadow: 0 0 0 0.4rem rgba(129, 223, 179, 0); transform: scale(1.1); }
+}
+
 .top-market-ticker {
   align-items: center;
   background: linear-gradient(90deg, #62162b 0%, #741b32 52%, #8a2942 100%);
@@ -874,6 +1002,9 @@ a {
   .animated-market-symbol,
   .top-market-ticker-track,
   .top-market-ticker-live-dot,
+  .sidebar-live-orb,
+  .sidebar-market-scan,
+  .sidebar-session-dot,
   .modern-data-table-row {
     animation: none;
   }

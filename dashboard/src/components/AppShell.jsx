@@ -22,8 +22,8 @@ export default function AppShell({ children }) {
 
   const initial = user.email?.[0]?.toUpperCase() ?? "?";
   const nav = (
-    <nav aria-label="Primary navigation" className="space-y-1 px-3 py-4">
-      <p className="px-3 pb-2 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-white/75">
+    <nav aria-label="Primary navigation" className="sidebar-navigation space-y-1 px-3 py-4">
+      <p className="sidebar-navigation-label px-3 pb-2 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-white/75">
         Your workspace
       </p>
       {navItems.map((item) => {
@@ -35,9 +35,9 @@ export default function AppShell({ children }) {
             href={item.href}
             onClick={() => setNavOpen(false)}
             aria-current={active ? "page" : undefined}
-            className={`group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold ${
+            className={`sidebar-navigation-link group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold ${
               active
-                ? "bg-[#f5dfe2] text-[#71192f]"
+                ? "sidebar-navigation-link-active bg-[#f5dfe2] text-[#71192f]"
                 : "text-white hover:bg-[#62162b] hover:text-white"
             }`}
           >
@@ -65,10 +65,13 @@ export default function AppShell({ children }) {
         Skip to main content
       </a>
 
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-[#5d1327] bg-[#741b32] md:flex">
-        <div className="border-b border-line px-5 py-5">
+      <aside className="sidebar-live-panel hidden w-60 shrink-0 flex-col border-r border-[#5d1327] bg-[#741b32] md:flex">
+        <div className="sidebar-live-orb sidebar-live-orb-top" aria-hidden="true" />
+        <div className="sidebar-live-orb sidebar-live-orb-bottom" aria-hidden="true" />
+        <div className="sidebar-market-scan" aria-hidden="true" />
+        <div className="sidebar-brand-panel border-b border-line px-5 py-5">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#fff7f4] text-sm font-black text-primary">
+            <span className="sidebar-brand-mark flex h-8 w-8 items-center justify-center rounded-md bg-[#fff7f4] text-sm font-black text-primary">
               T
             </span>
             <span className="text-lg font-bold tracking-tight text-white">TradePulse</span>
@@ -77,10 +80,10 @@ export default function AppShell({ children }) {
             Investment workspace
           </p>
         </div>
-        <div className="flex-1">{nav}</div>
-        <div className="m-3 rounded-md border border-[#b66475] bg-[#62162b] px-3 py-2.5">
+        <div className="relative z-[1] flex-1">{nav}</div>
+        <div className="sidebar-session-card relative z-[1] m-3 rounded-md border border-[#b66475] bg-[#62162b] px-3 py-2.5">
           <p className="flex items-center gap-2 text-[0.67rem] font-bold uppercase tracking-[0.08em] text-[#ffe9e7]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#81dfb3]" />
+            <span className="sidebar-session-dot h-1.5 w-1.5 rounded-full bg-[#81dfb3]" />
             Secure session
           </p>
         </div>
