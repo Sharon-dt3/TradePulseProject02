@@ -38,10 +38,26 @@ export default function OrdersTable({ orders, loading, onCancel }) {
 
   const columns = [
     { key: "symbol", label: "Symbol", sortable: true },
-    { key: "side", label: "Side", render: (row) => <Badge tone={row.side === "BUY" ? "success" : "danger"}>{row.side}</Badge> },
+    {
+      key: "side",
+      label: "Side",
+      render: (row) => (
+        <Badge tone={row.side === "BUY" ? "success" : "danger"} size="prominent" interactive>
+          {row.side}
+        </Badge>
+      ),
+    },
     { key: "orderType", label: "Type" },
     { key: "quantity", label: "Qty", render: (row) => formatNumber(row.quantity) },
-    { key: "status", label: "Status", render: (row) => <Badge tone={statusTone(row.status)}>{row.status}</Badge> },
+    {
+      key: "status",
+      label: "Status",
+      render: (row) => (
+        <Badge tone={statusTone(row.status)} size="prominent" interactive>
+          {row.status}
+        </Badge>
+      ),
+    },
     {
       key: "rejectionReason",
       label: "Detail",

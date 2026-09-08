@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
+import Badge from "@/components/ui/Badge";
 import { formatMoney, formatNumber, formatPct } from "@/lib/format";
 
 /**
@@ -62,7 +63,18 @@ export default function PositionsTable({ positions, prices = [], loading, onSele
           {
             key: "quoteAgeMs",
             label: "Quote status",
-            render: (row) => row.quoteAgeMs === null ? "No quote" : `${Math.round(row.quoteAgeMs / 1000)}s old`,
+            render: (row) => {
+              if (row.quoteAgeMs === null) {
+                return <Badge tone="neutral" size="prominent" interactive>No quote</Badge>;
+              }
+
+              const stale = row.quoteAgeMs > 30000;
+              return (
+                <Badge tone={stale ? "warning" : "info"} size="prominent" interactive>
+                  {stale ? "Quote stale" : `${Math.round(row.quoteAgeMs / 1000)}s old`}
+                </Badge>
+              );
+            },
           },
           {
             key: "actions",
