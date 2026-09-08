@@ -102,13 +102,14 @@ Record only the two resulting **secret ARNs**. The ARNs are safe to place in `te
 
 The dashboard uses Supabase public browser configuration at build time. The Supabase URL and anonymous key are public client values; never pass the service-role key or database credentials as Docker build arguments.
 
-Set the two public values in your terminal without saving them to Git:
+Set the two public values in your terminal without saving them to Git. The
+following syntax works in macOS's default zsh shell:
 
 ```bash
-read -r -p "Supabase project URL: " NEXT_PUBLIC_SUPABASE_URL
-read -r -s -p "Supabase anonymous key: " NEXT_PUBLIC_SUPABASE_ANON_KEY
+export NEXT_PUBLIC_SUPABASE_URL="https://psbxribzhqycoogqeiuh.supabase.co"
+read -r -s "NEXT_PUBLIC_SUPABASE_ANON_KEY?Supabase anonymous key: "
 echo
-export NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY
+export NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
 Build and push all images:
@@ -143,6 +144,10 @@ docker push "$ECR_REGISTRY/tradepulse-tick-producer:$IMAGE_TAG"
 ```
 
 The dashboard defaults to same-origin API calls in AWS, so do not provide public ledger, risk, or gateway URLs for this direct-ALB build.
+
+### Apple Silicon image architecture
+
+The ECS task definitions are configured for Linux `ARM64`, matching images built with Docker/OrbStack on Apple Silicon Macs. Build all five images on the same Mac. If you later build images in an x86_64 CI environment, either build/push ARM64 images explicitly or change the ECS task definitions and rebuild every image for x86_64.
 
 ## 4. Configure Terraform
 

@@ -137,10 +137,14 @@ resource "aws_ecs_task_definition" "service" {
   family                   = "${local.name_prefix}-${replace(each.key, "_", "-")}"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = each.key == "tick_producer" ? 256 : var.ecs_cpu
-  memory                   = each.key == "tick_producer" ? 512 : var.ecs_memory
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
+  runtime_platform {
+    cpu_architecture        = "ARM64"
+    operating_system_family = "LINUX"
+  }
+  cpu                = each.key == "tick_producer" ? 256 : var.ecs_cpu
+  memory             = each.key == "tick_producer" ? 512 : var.ecs_memory
+  execution_role_arn = aws_iam_role.execution.arn
+  task_role_arn      = aws_iam_role.task.arn
 
   container_definitions = jsonencode([{
     name        = replace(each.key, "_", "-")
