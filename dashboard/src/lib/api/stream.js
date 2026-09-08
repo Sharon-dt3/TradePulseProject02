@@ -1,7 +1,11 @@
 import { ledgerCoreFetch } from "@/lib/api/client";
 
+// In production the ALB exposes /sse on the dashboard origin. Local Next.js
+// does not proxy this endpoint, so development connects to the local gateway.
+const isDevelopment = process.env.NODE_ENV === "development";
 const GATEWAY_URL =
-  process.env.NEXT_PUBLIC_GATEWAY_URL ?? "";
+  process.env.NEXT_PUBLIC_GATEWAY_URL ??
+  (isDevelopment ? "http://localhost:8081" : "");
 
 /**
  * Opens a ticket-authenticated SSE connection to the gateway. Never

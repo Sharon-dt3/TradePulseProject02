@@ -1,9 +1,15 @@
 import { supabase } from "@/lib/supabaseClient";
 
+// Production requests stay same-origin so the AWS ALB can route API paths
+// to the appropriate ECS service. During `next dev`, point directly at the
+// locally running services unless a developer explicitly supplies an override.
+const isDevelopment = process.env.NODE_ENV === "development";
 const LEDGER_CORE_URL =
-  process.env.NEXT_PUBLIC_LEDGER_CORE_URL ?? "";
+  process.env.NEXT_PUBLIC_LEDGER_CORE_URL ??
+  (isDevelopment ? "http://localhost:8080" : "");
 const RISK_ENGINE_URL =
-  process.env.NEXT_PUBLIC_RISK_ENGINE_URL ?? "";
+  process.env.NEXT_PUBLIC_RISK_ENGINE_URL ??
+  (isDevelopment ? "http://localhost:8001" : "");
 
 /**
  * Returns the Authorization header for the current session, or an
