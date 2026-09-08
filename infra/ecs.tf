@@ -67,7 +67,7 @@ locals {
     { name = "SUPABASE_SERVICE_ROLE_KEY", valueFrom = "${var.supabase_runtime_secret_arn}:SUPABASE_SERVICE_ROLE_KEY::" },
     { name = "SUPABASE_JWKS_URL", valueFrom = "${var.supabase_runtime_secret_arn}:SUPABASE_JWKS_URL::" },
     { name = "SUPABASE_JWT_ISSUER", valueFrom = "${var.supabase_runtime_secret_arn}:SUPABASE_JWT_ISSUER::" }
-  }
+  ]
 
   service_definitions = {
     dashboard = {
@@ -141,9 +141,9 @@ resource "aws_ecs_task_definition" "service" {
   task_role_arn            = aws_iam_role.task.arn
 
   container_definitions = jsonencode([{
-    name      = replace(each.key, "_", "-")
-    image     = each.value.image
-    essential = true
+    name        = replace(each.key, "_", "-")
+    image       = each.value.image
+    essential   = true
     environment = each.value.environment
     secrets     = each.value.secrets
     portMappings = each.value.port == null ? [] : [{

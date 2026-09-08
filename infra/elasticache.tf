@@ -22,5 +22,5 @@ resource "aws_elasticache_replication_group" "redis" {
 
   maintenance_window       = "sun:05:00-sun:06:00"
   snapshot_retention_limit = 7
-  snapshot_window         = "03:00-04:00"
+  snapshot_window          = "03:00-04:00"
 }
