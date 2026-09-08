@@ -141,7 +141,98 @@ a {
   color: #351923;
 }
 
-.market-pulse-panel article,
+.market-pulse-panel .market-pulse-card {
+  background:
+    radial-gradient(circle at 88% 6%, rgba(71, 167, 139, 0.15), transparent 9rem),
+    linear-gradient(145deg, #182c45 0%, #102238 55%, #17263b 100%);
+  border-color: rgba(149, 190, 212, 0.32);
+  box-shadow: 0 12px 28px rgba(27, 37, 59, 0.2);
+  color: #eff8fc;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.market-pulse-panel .market-pulse-card:hover {
+  border-color: rgba(121, 218, 184, 0.65);
+  box-shadow: 0 16px 32px rgba(27, 37, 59, 0.29);
+  transform: translateY(-2px);
+}
+
+.market-pulse-panel .market-pulse-card .text-fg {
+  color: #f6fbff;
+}
+
+.market-pulse-panel .market-pulse-card .text-muted {
+  color: #a9c0cf;
+}
+
+.market-pulse-panel .market-pulse-card .bg-surface {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.market-pulse-panel .market-pulse-card .border-line {
+  border-color: rgba(169, 205, 224, 0.22);
+}
+
+.market-pulse-chart {
+  border: 1px solid rgba(159, 207, 228, 0.18);
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(rgba(151, 196, 216, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(151, 196, 216, 0.07) 1px, transparent 1px),
+    linear-gradient(145deg, #0c1b2e, #132b43);
+  background-size: 100% 25%, 25% 100%, auto;
+  overflow: hidden;
+  padding: 0.35rem 0.45rem;
+}
+
+.market-pulse-chart .stroke-line {
+  stroke: rgba(187, 220, 234, 0.24);
+}
+
+.market-pulse-chart .stroke-surface {
+  stroke: #132b43;
+}
+
+.market-pulse-chart-detail {
+  padding: 0.55rem 0.7rem;
+}
+
+.symbol-logo {
+  align-items: center;
+  border-radius: 0.7rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 900;
+  height: 2.15rem;
+  justify-content: center;
+  line-height: 1;
+  width: 2.15rem;
+}
+
+.symbol-logo-large {
+  border-radius: 0.9rem;
+  font-size: 1.35rem;
+  height: 3rem;
+  width: 3rem;
+}
+
+.symbol-logo-btc { background: #f7931a; color: #fff; }
+.symbol-logo-aapl { background: linear-gradient(145deg, #111827, #687386); color: #fff; }
+.symbol-logo-msft { background: linear-gradient(135deg, #f35325 0 45%, #81bc06 45% 50%, #05a6f0 50% 55%, #ffba08 55%); color: #fff; }
+.symbol-logo-googl { background: conic-gradient(from 210deg, #4285f4, #34a853, #fbbc05, #ea4335, #4285f4); color: #fff; }
+.symbol-logo-tsla { background: linear-gradient(145deg, #ef3340, #9e1520); color: #fff; }
+.symbol-logo-default { background: #536a7e; color: #fff; }
+
+.market-pulse-panel .market-pulse-detail {
+  background:
+    radial-gradient(circle at 92% 0%, rgba(151, 73, 104, 0.18), transparent 17rem),
+    linear-gradient(145deg, rgba(255, 251, 250, 0.94), rgba(247, 226, 230, 0.94));
+  border-color: rgba(143, 51, 73, 0.35);
+  box-shadow: 0 12px 28px rgba(92, 30, 48, 0.12);
+}
+
 .market-pulse-panel > div > div.rounded-lg {
   border-color: #c38f9a;
   background: #fff8f7;

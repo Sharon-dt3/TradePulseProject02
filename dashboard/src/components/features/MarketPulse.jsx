@@ -8,6 +8,27 @@ import { formatMoney } from "@/lib/format";
 const STALE_AFTER_MS = 30000;
 const WATCHLIST_STORAGE_KEY = "tradepulse-market-pulse-watchlist";
 const ALERT_STORAGE_KEY = "tradepulse-market-pulse-alerts";
+const SYMBOL_IDENTITIES = {
+  BTCUSD: { label: "Bitcoin", mark: "₿", className: "symbol-logo-btc" },
+  AAPL: { label: "Apple", mark: "A", className: "symbol-logo-aapl" },
+  MSFT: { label: "Microsoft", mark: "▦", className: "symbol-logo-msft" },
+  GOOGL: { label: "Alphabet", mark: "G", className: "symbol-logo-googl" },
+  TSLA: { label: "Tesla", mark: "T", className: "symbol-logo-tsla" },
+};
+
+function SymbolLogo({ symbol, size = "default" }) {
+  const identity = SYMBOL_IDENTITIES[symbol] ?? { label: symbol, mark: symbol.slice(0, 1), className: "symbol-logo-default" };
+
+  return (
+    <span
+      className={`symbol-logo ${identity.className} symbol-logo-${size}`}
+      aria-label={`${identity.label} symbol`}
+      role="img"
+    >
+      {identity.mark}
+    </span>
+  );
+}
 
 function isUsMarketOpen() {
   const now = new Date();
@@ -71,18 +92,21 @@ function MarketPulseCard({
     movement > 0 ? "text-success" : movement < 0 ? "text-danger" : "text-muted";
 
   return (
-    <article className="rounded-xl border border-line bg-bg p-3 shadow-[var(--shadow-card)]">
+    <article className="market-pulse-card rounded-xl border p-3">
       <div className="flex items-start justify-between gap-2">
         <button
           type="button"
           onClick={() => onSelect(symbol)}
-          className="min-w-0 text-left"
+          className="flex min-w-0 items-center gap-2.5 text-left"
           aria-label={`Open ${symbol} quote details`}
         >
-          <p className="font-mono text-sm font-semibold text-fg">{symbol}</p>
-          <p className="mt-1 font-serif-display tabular-nums text-xl font-semibold text-fg">
-            {quote ? formatMoney(quote.price) : "—"}
-          </p>
+          <SymbolLogo symbol={symbol} />
+          <span>
+            <span className="block font-mono text-sm font-semibold text-fg">{symbol}</span>
+            <span className="mt-1 block font-serif-display tabular-nums text-xl font-semibold text-fg">
+              {quote ? formatMoney(quote.price) : "—"}
+            </span>
+          </span>
         </button>
         <div className="flex items-center gap-1">
           <button
@@ -103,7 +127,7 @@ function MarketPulseCard({
         </div>
       </div>
 
-      <button type="button" onClick={() => onSelect(symbol)} className="mt-3 block w-full text-left" aria-label={`View ${symbol} trend`}>
+      <button type="button" onClick={() => onSelect(symbol)} className="market-pulse-chart mt-3 block w-full text-left" aria-label={`View ${symbol} trend`}>
         <PriceTrendChart symbol={symbol} points={points} />
       </button>
 
@@ -310,13 +334,16 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
       </div>
 
       {selectedSymbol && (
-        <div className="mt-4 rounded-xl border border-primary/25 bg-primary-soft/35 p-4">
+        <div className="market-pulse-detail mt-4 rounded-xl border p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="font-mono text-base font-semibold text-fg">{selectedSymbol}</p>
-              <p className="mt-1 font-serif-display tabular-nums text-2xl font-semibold text-fg">
+            <div className="flex items-center gap-3">
+              <SymbolLogo symbol={selectedSymbol} size="large" />
+              <div>
+                <p className="font-mono text-base font-semibold text-fg">{selectedSymbol}</p>
+                <p className="mt-1 font-serif-display tabular-nums text-2xl font-semibold text-fg">
                 {selectedQuote ? formatMoney(selectedQuote.price) : "—"}
-              </p>
+                </p>
+              </div>
             </div>
             <div className="flex gap-2">
               <Badge tone={selectedStatus.tone}>{selectedStatus.label}</Badge>
@@ -324,7 +351,7 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="market-pulse-chart market-pulse-chart-detail mt-4">
             <PriceTrendChart symbol={`${selectedSymbol}-detail`} points={selectedPoints} />
           </div>
           {!rangeHasEnoughData && (
