@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { navItemsForRoles } from "@/lib/roles";
-import { TopMarketTicker } from "@/components/ui/AnimatedMarketBackdrop";
+import AnimatedMarketBackdrop, { TopMarketTicker } from "@/components/ui/AnimatedMarketBackdrop";
 
 /**
  * Provides the authenticated application frame, responsive navigation, and
@@ -150,8 +150,14 @@ export default function AppShell({ children }) {
           </div>
         )}
 
-        <main id="main-content" className="min-w-0 flex-1 overflow-x-hidden p-4 md:p-5 lg:p-6">
-          <div className="mx-auto max-w-[90rem]">{children}</div>
+        <main
+          id="main-content"
+          className={`min-w-0 flex-1 overflow-x-hidden p-4 md:p-5 lg:p-6 ${
+            showTopMarketTicker ? "authenticated-market-workspace" : ""
+          }`}
+        >
+          {showTopMarketTicker && <AnimatedMarketBackdrop />}
+          <div className="relative z-[1] mx-auto max-w-[90rem]">{children}</div>
         </main>
       </div>
     </div>

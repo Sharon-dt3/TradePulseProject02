@@ -8,7 +8,6 @@ import Card from "@/components/ui/Card";
 import PageHeader from "@/components/ui/PageHeader";
 import { formatMoney } from "@/lib/format";
 import { useMarketPriceHistory } from "@/lib/useMarketPriceHistory";
-import AnimatedMarketBackdrop from "@/components/ui/AnimatedMarketBackdrop";
 
 function isUsMarketOpen() {
   const weekday = new Intl.DateTimeFormat("en-US", {
@@ -113,9 +112,7 @@ function MarketsWorkspace() {
   const selectedQuote = prices?.find((quote) => quote.symbol === selectedSymbol);
 
   return (
-    <div className="animated-market-workspace">
-      <AnimatedMarketBackdrop />
-      <div className="animated-market-content">
+    <div>
       <PageHeader
         title="Markets"
         subtitle="Review current live quotes and open the supported order workflow."
@@ -200,7 +197,6 @@ function MarketsWorkspace() {
         Quotes are supplied by the configured market-data feed. Orders are limited to
         symbols supported by the existing market and limit-order workflow.
       </p>
-      </div>
     </div>
   );
 }

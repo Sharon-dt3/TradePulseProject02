@@ -23,7 +23,6 @@ import { formatMoney } from "@/lib/format";
 import MarketPulse from "@/components/features/MarketPulse";
 import { useDemoEquityPrices } from "@/lib/useDemoEquityPrices";
 import { useMarketPriceHistory } from "@/lib/useMarketPriceHistory";
-import AnimatedMarketBackdrop from "@/components/ui/AnimatedMarketBackdrop";
 
 const TABS = ["Orders", "Positions", "Trades", "Transactions"];
 const POLL_INTERVAL_MS = 5000;
@@ -180,9 +179,7 @@ function TraderWorkspace() {
     showWorkingOrders && orders ? orders.filter((order) => order.status === "WORKING") : orders;
 
   return (
-    <div className="trade-workspace animated-market-workspace">
-      <AnimatedMarketBackdrop />
-      <div className="animated-market-content">
+    <div className="trade-workspace">
       <PageHeader
         title="Your portfolio"
         subtitle="Review your balance, investments, market context, and account activity."
@@ -323,7 +320,6 @@ function TraderWorkspace() {
 
       <div className="mt-4">
         <MarketPriceSparklines latest={marketMonitorPrices} history={marketMonitorHistory} />
-      </div>
       </div>
     </div>
   );

@@ -192,6 +192,12 @@ a {
   z-index: 1;
 }
 
+.authenticated-market-workspace {
+  --color-bg: #efe2e2;
+  isolation: isolate;
+  position: relative;
+}
+
 .top-market-ticker {
   align-items: center;
   background: linear-gradient(90deg, #62162b 0%, #741b32 52%, #8a2942 100%);
