@@ -241,7 +241,7 @@ function TraderWorkspace() {
 
       <div className="mb-4">
         <Card
-          title="Market pulse"
+          title={<span className="text-2xl font-bold normal-case tracking-normal text-[#3a1722]">Market pulse</span>}
           action={<span className="text-xs text-muted">interactive quote workspace</span>}
           className="market-pulse-panel"
         >
