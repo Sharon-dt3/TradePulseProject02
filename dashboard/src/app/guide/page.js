@@ -6,6 +6,8 @@ import PageHeader from "@/components/ui/PageHeader";
 import Button from "@/components/ui/Button";
 import { ALL_ROLES } from "@/lib/roles";
 
+const MARKET_SYMBOLS = ["BTCUSD", "AAPL", "MSFT", "GOOGL", "TSLA", "BUY", "SELL", "VaR"];
+
 const SLIDES = [
   {
     eyebrow: "TradePulse Guide",
@@ -24,8 +26,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Introduce TradePulse as a connected trading-operations workflow. Start with the journey from a market quote to an order, execution, updated portfolio context, and auditable oversight.",
   },
   {
     eyebrow: "Secure access",
@@ -46,8 +46,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Explain that the dashboard selects an appropriate workspace for the person, but server-side permission checks remain the real enforcement point for every protected action.",
   },
   {
     eyebrow: "Trader",
@@ -65,8 +63,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Open the Trader workspace and show that it supports both decision-making and follow-through: the portfolio overview, market pulse, risk panel, order ticket, and account activity are all connected.",
   },
   {
     eyebrow: "Market data",
@@ -89,8 +85,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Use BTCUSD for a reliable live demonstration. Make clear that simulated equities support visual presentation only and are explicitly labeled so they are not mistaken for executable market data.",
   },
   {
     eyebrow: "Order workflow",
@@ -114,8 +108,6 @@ const SLIDES = [
         items: ["BTCUSD", "Buy", "Market", "Quantity: 0.001"],
       },
     ],
-    presenterNote:
-      "Show the order ticket. Explain that the displayed amount is an estimate and a market fill may differ as market prices move. For a small demo, BTCUSD quantity 0.001 is easy to explain.",
   },
   {
     eyebrow: "Order types",
@@ -140,8 +132,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Contrast immediate execution with price certainty. A simple example is a BTCUSD buy limit at 78,500 when the current quote is higher: it waits instead of paying more than the limit.",
   },
   {
     eyebrow: "Trade outcome",
@@ -166,8 +156,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Emphasize that buying does not automatically create value at the moment of execution. It changes the account composition from cash into asset exposure; subsequent market movement changes the holding value.",
   },
   {
     eyebrow: "Trade outcome",
@@ -192,8 +180,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Describe selling as the reverse of buying. It reduces the account’s sensitivity to that asset and returns the filled value to cash, subject to the platform’s position and account controls.",
   },
   {
     eyebrow: "Portfolio intelligence",
@@ -218,8 +204,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Use a simple example: $1,000 cash plus 0.001 BTCUSD at a $79,000 quote equals $79 of holdings and approximately $1,079 portfolio value.",
   },
   {
     eyebrow: "Risk analytics",
@@ -245,8 +229,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Frame risk as a discussion tool. A low or zero metric can reflect limited historical variation, not proof that the asset is risk-free.",
   },
   {
     eyebrow: "Viewer",
@@ -270,8 +252,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "The Viewer enters a supplied account ID. The backend still verifies that the Viewer has permission to see that account before returning its information.",
   },
   {
     eyebrow: "Risk Manager",
@@ -295,8 +275,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Show the Risk workspace as the independent view across the firm. It is designed to help identify material exposure patterns, not to trade around them.",
   },
   {
     eyebrow: "Compliance",
@@ -321,8 +299,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Explain that account freezing is a targeted control, not a deletion. It can support suspicious-activity review, client-requested restrictions, KYC or AML review, unusual-risk review, or an operational incident.",
   },
   {
     eyebrow: "Admin",
@@ -347,8 +323,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "Describe administration as governance rather than routine trading. These are security-sensitive and operationally sensitive controls, deliberately separated from the Trader workspace.",
   },
   {
     eyebrow: "Dual control",
@@ -370,8 +344,6 @@ const SLIDES = [
         items: ["The same Admin cannot both propose and approve the adjustment."],
       },
     ],
-    presenterNote:
-      "Close the operational-control section by emphasizing separation of duties: no single administrator can create and approve their own sensitive cash correction.",
   },
   {
     eyebrow: "Close",
@@ -389,8 +361,6 @@ const SLIDES = [
         ],
       },
     ],
-    presenterNote:
-      "End by returning to traceability. Every team contributes to the same lifecycle with an appropriate, focused workspace—and the system preserves a clear operational record along the way.",
   },
 ];
 
@@ -426,6 +396,17 @@ function TradePulseGuide() {
 
   return (
     <div className="guide-workspace">
+      <div className="guide-market-background" aria-hidden="true">
+        <div className="guide-orb guide-orb-one" />
+        <div className="guide-orb guide-orb-two" />
+        <div className="guide-grid" />
+        {MARKET_SYMBOLS.map((symbol) => (
+          <span key={symbol} className="guide-market-symbol">
+            {symbol}
+          </span>
+        ))}
+      </div>
+
       <PageHeader
         title="TradePulse Guide"
         subtitle="A presentation-ready walkthrough of the trading lifecycle, platform controls, and role-specific workspaces."
@@ -465,11 +446,6 @@ function TradePulseGuide() {
               </article>
             ))}
           </div>
-
-          <aside className="mt-7 rounded-xl border border-[#dbb1b9] bg-[#f8e8ea]/85 p-4">
-            <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-primary">Presenter note</p>
-            <p className="mt-2 text-sm leading-relaxed text-[#51323a]">{slide.presenterNote}</p>
-          </aside>
         </div>
       </section>
 

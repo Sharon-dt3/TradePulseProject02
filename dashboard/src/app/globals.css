@@ -172,11 +172,129 @@ a {
 /* Gives the in-app guide a clear presentation surface while retaining the dashboard palette. */
 .guide-workspace {
   --color-bg: #efe4e2;
+  isolation: isolate;
+  position: relative;
+}
+
+.guide-workspace > :not(.guide-market-background) {
+  position: relative;
+  z-index: 1;
+}
+
+.guide-market-background {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
 }
 
 .guide-deck {
   background:
-    linear-gradient(135deg, rgba(255, 252, 251, 0.96) 0%, rgba(248, 227, 232, 0.96) 100%);
+    linear-gradient(135deg, rgba(255, 252, 251, 0.93) 0%, rgba(248, 227, 232, 0.93) 100%);
+}
+
+.guide-grid {
+  background-image:
+    linear-gradient(rgba(116, 27, 50, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(116, 27, 50, 0.045) 1px, transparent 1px);
+  background-size: 38px 38px;
+  inset: 0;
+  mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  opacity: 0.7;
+  position: absolute;
+  transform: perspective(540px) rotateX(58deg) scale(1.55) translateY(15%);
+  transform-origin: center bottom;
+}
+
+.guide-orb {
+  border-radius: 9999px;
+  filter: blur(18px);
+  opacity: 0.42;
+  position: absolute;
+}
+
+.guide-orb-one {
+  animation: guide-orbit-one 15s ease-in-out infinite alternate;
+  background: radial-gradient(circle, rgba(174, 65, 92, 0.42), rgba(174, 65, 92, 0));
+  height: 25rem;
+  right: -9rem;
+  top: -7rem;
+  width: 25rem;
+}
+
+.guide-orb-two {
+  animation: guide-orbit-two 18s ease-in-out infinite alternate;
+  background: radial-gradient(circle, rgba(202, 133, 151, 0.48), rgba(202, 133, 151, 0));
+  bottom: -10rem;
+  height: 28rem;
+  left: -10rem;
+  width: 28rem;
+}
+
+.guide-market-symbol {
+  animation: guide-symbol-float 11s ease-in-out infinite;
+  border: 1px solid rgba(116, 27, 50, 0.13);
+  border-radius: 9999px;
+  color: rgba(116, 27, 50, 0.25);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.45rem 0.7rem;
+  position: absolute;
+  text-transform: uppercase;
+}
+
+.guide-market-symbol:nth-of-type(4n + 1) {
+  animation-delay: -2s;
+  left: 5%;
+  top: 12%;
+}
+
+.guide-market-symbol:nth-of-type(4n + 2) {
+  animation-delay: -6s;
+  right: 6%;
+  top: 30%;
+}
+
+.guide-market-symbol:nth-of-type(4n + 3) {
+  animation-delay: -9s;
+  bottom: 18%;
+  left: 18%;
+}
+
+.guide-market-symbol:nth-of-type(4n) {
+  animation-delay: -4s;
+  bottom: 8%;
+  right: 20%;
+}
+
+@keyframes guide-symbol-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-2deg);
+  }
+  50% {
+    transform: translate3d(20px, -28px, 0) rotate(2deg);
+  }
+}
+
+@keyframes guide-orbit-one {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-4rem, 3rem, 0) scale(1.14);
+  }
+}
+
+@keyframes guide-orbit-two {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(5rem, -3rem, 0) scale(1.12);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -187,5 +305,10 @@ a {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .guide-market-symbol,
+  .guide-orb {
+    animation: none;
   }
 }
