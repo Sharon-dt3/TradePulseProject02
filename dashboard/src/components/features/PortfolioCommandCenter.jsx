@@ -125,6 +125,23 @@ export default function PortfolioCommandCenter({
           <MetricCard label="Holdings" value={formatMoney(holdings.holdingsValue)} detail={`${holdings.positions.length} open position${holdings.positions.length === 1 ? "" : "s"}`} variant="holdings" icon="◫" />
         </div>
 
+        <p className="portfolio-command-center-equation" aria-label={`Portfolio value ${formatMoney(portfolioValue)} equals cash available ${formatMoney(cash)} plus holdings ${formatMoney(holdings.holdingsValue)}`}>
+          <span className="portfolio-command-center-equation-term portfolio-command-center-equation-portfolio">
+            <span>Portfolio value</span>
+            <strong>{formatMoney(portfolioValue)}</strong>
+          </span>
+          <span className="portfolio-command-center-equation-operator portfolio-command-center-equation-equals" aria-hidden="true">=</span>
+          <span className="portfolio-command-center-equation-term portfolio-command-center-equation-cash">
+            <span>Cash available</span>
+            <strong>{formatMoney(cash)}</strong>
+          </span>
+          <span className="portfolio-command-center-equation-operator portfolio-command-center-equation-plus" aria-hidden="true">+</span>
+          <span className="portfolio-command-center-equation-term portfolio-command-center-equation-holdings">
+            <span>Holdings</span>
+            <strong>{formatMoney(holdings.holdingsValue)}</strong>
+          </span>
+        </p>
+
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(14rem,0.9fr)]">
           <section aria-labelledby="holdings-heading">
             <div className="mb-2 flex items-center justify-between gap-3">
