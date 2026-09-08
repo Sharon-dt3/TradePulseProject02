@@ -7,6 +7,14 @@ import Button from "@/components/ui/Button";
 import { ALL_ROLES } from "@/lib/roles";
 
 const MARKET_SYMBOLS = ["BTCUSD", "AAPL", "MSFT", "GOOGL", "TSLA", "BUY", "SELL", "VaR"];
+const ROLE_DEMO_SLIDE_TITLES = [
+  "Make informed trading decisions",
+  "Read-only account visibility",
+  "Independent firm-wide risk oversight",
+  "Controls and investigations",
+  "Access and operational governance",
+];
+const ROLE_DEMO_INTERVAL_MS = 7000;
 
 const SLIDES = [
   {
@@ -364,28 +372,58 @@ const SLIDES = [
   },
 ];
 
+const ROLE_DEMO_SLIDE_INDEXES = SLIDES
+  .map((item, index) => (ROLE_DEMO_SLIDE_TITLES.includes(item.title) ? index : null))
+  .filter((index) => index !== null);
+
 /**
  * Renders the authenticated, presentation-ready TradePulse Guide.
  * Slides can be advanced with the visible controls or keyboard arrow keys.
  */
 function TradePulseGuide() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isRoleDemoPlaying, setIsRoleDemoPlaying] = useState(false);
   const slide = SLIDES[currentSlide];
   const isFirstSlide = currentSlide === 0;
   const isLastSlide = currentSlide === SLIDES.length - 1;
+  const currentRoleDemoPosition = ROLE_DEMO_SLIDE_INDEXES.indexOf(currentSlide);
+
+  useEffect(() => {
+    if (!isRoleDemoPlaying) return undefined;
+
+    const timer = window.setTimeout(() => {
+      const nextPosition = currentRoleDemoPosition + 1;
+      if (nextPosition >= ROLE_DEMO_SLIDE_INDEXES.length) {
+        setIsRoleDemoPlaying(false);
+        return;
+      }
+      setCurrentSlide(ROLE_DEMO_SLIDE_INDEXES[nextPosition]);
+    }, ROLE_DEMO_INTERVAL_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [currentRoleDemoPosition, isRoleDemoPlaying]);
+
+  const startRoleDemo = () => {
+    setCurrentSlide(ROLE_DEMO_SLIDE_INDEXES[0]);
+    setIsRoleDemoPlaying(true);
+  };
 
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "ArrowRight" && !isLastSlide) {
+        setIsRoleDemoPlaying(false);
         setCurrentSlide((index) => index + 1);
       }
       if (event.key === "ArrowLeft" && !isFirstSlide) {
+        setIsRoleDemoPlaying(false);
         setCurrentSlide((index) => index - 1);
       }
       if (event.key === "Home") {
+        setIsRoleDemoPlaying(false);
         setCurrentSlide(0);
       }
       if (event.key === "End") {
+        setIsRoleDemoPlaying(false);
         setCurrentSlide(SLIDES.length - 1);
       }
     };
@@ -416,10 +454,9 @@ function TradePulseGuide() {
           </span>
         }
       />
-
       <section
         className="guide-deck relative overflow-hidden rounded-2xl border border-[#ba8591] p-5 shadow-[0_14px_35px_rgba(92,30,48,0.14)] sm:p-8"
-        aria-label={`Slide ${currentSlide + 1}: ${slide.title}`}
+        aria-label={`${isRoleDemoPlaying ? "Automatic role workflow demo. " : ""}Slide ${currentSlide + 1}: ${slide.title}`}
       >
         <div className="absolute -right-24 -top-28 h-64 w-64 rounded-full bg-[#f0bdc7]/50 blur-3xl" />
         <div className="absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-[#c98e9d]/35 blur-3xl" />
@@ -469,17 +506,36 @@ function TradePulseGuide() {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => setCurrentSlide((index) => Math.max(0, index - 1))}
+            onClick={() => {
+              setIsRoleDemoPlaying(false);
+              setCurrentSlide((index) => Math.max(0, index - 1));
+            }}
             disabled={isFirstSlide}
           >
             Previous
           </Button>
           <Button
             type="button"
-            onClick={() => setCurrentSlide((index) => Math.min(SLIDES.length - 1, index + 1))}
+            onClick={() => {
+              setIsRoleDemoPlaying(false);
+              setCurrentSlide((index) => Math.min(SLIDES.length - 1, index + 1));
+            }}
             disabled={isLastSlide}
           >
             Next
+          </Button>
+        </div>
+
+        <div className="guide-role-demo-control">
+          <span className="guide-role-demo-status" aria-live="polite">
+            {isRoleDemoPlaying ? `Auto-presenting ${currentRoleDemoPosition + 1} of ${ROLE_DEMO_SLIDE_INDEXES.length} role workspaces` : "Role workflow demo"}
+          </span>
+          <Button
+            type="button"
+            variant={isRoleDemoPlaying ? "secondary" : "primary"}
+            onClick={() => (isRoleDemoPlaying ? setIsRoleDemoPlaying(false) : startRoleDemo())}
+          >
+            {isRoleDemoPlaying ? "Pause demo" : "Run role demo"}
           </Button>
         </div>
 
@@ -488,7 +544,10 @@ function TradePulseGuide() {
             <button
               key={item.title}
               type="button"
-              onClick={() => setCurrentSlide(index)}
+              onClick={() => {
+                setIsRoleDemoPlaying(false);
+                setCurrentSlide(index);
+              }}
               className={`h-2.5 rounded-full transition-all ${
                 currentSlide === index ? "w-7 bg-primary" : "w-2.5 bg-[#d9bcc1] hover:bg-[#ab6c7b]"
               }`}
