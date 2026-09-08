@@ -50,10 +50,36 @@ function TodaySummary({ account, orders, positions, prices, onReviewOpenOrders, 
   const quotedSymbols = prices?.length ?? 0;
 
   const items = [
-    { label: "Portfolio value", value: formatMoney(cash + holdingsValue), detail: "Cash + quoted holdings" },
-    { label: "Cash available", value: formatMoney(cash), detail: cash < 0 ? "Review buying power" : "Ready for supported orders", tone: cash < 0 ? "danger" : undefined },
-    { label: "Open orders", value: openOrders.toLocaleString(), detail: openOrders ? "Review active instructions" : "No active instructions", action: onReviewOpenOrders },
-    { label: "Live quotes", value: quotedSymbols.toLocaleString(), detail: quotedSymbols ? "Symbols available to explore" : "Waiting for market data", action: undefined },
+    {
+      label: "Portfolio value",
+      value: formatMoney(cash + holdingsValue),
+      detail: "Cash + quoted holdings",
+      icon: "◈",
+      variant: "portfolio",
+    },
+    {
+      label: "Cash available",
+      value: formatMoney(cash),
+      detail: cash < 0 ? "Review buying power" : "Ready for supported orders",
+      icon: "$",
+      tone: cash < 0 ? "danger" : undefined,
+      variant: cash < 0 ? "cash-warning" : "cash",
+    },
+    {
+      label: "Open orders",
+      value: openOrders.toLocaleString(),
+      detail: openOrders ? "Review active instructions" : "No active instructions",
+      icon: "↗",
+      action: onReviewOpenOrders,
+      variant: "orders",
+    },
+    {
+      label: "Live quotes",
+      value: quotedSymbols.toLocaleString(),
+      detail: quotedSymbols ? "Symbols available to explore" : "Waiting for market data",
+      icon: "⌁",
+      variant: "quotes",
+    },
   ];
 
   return (
@@ -69,15 +95,16 @@ function TodaySummary({ account, orders, positions, prices, onReviewOpenOrders, 
             type="button"
             onClick={item.action}
             disabled={!item.action}
-            className={`group rounded-xl border border-line bg-surface p-4 text-left shadow-[var(--shadow-card)] transition-[transform,box-shadow,border-color] duration-200 ${
+            className={`today-metric today-metric-${item.variant} group relative overflow-hidden rounded-xl border p-4 text-left transition-[transform,box-shadow,border-color] duration-200 ${
               item.action ? "cursor-pointer hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[var(--shadow-card-hover)]" : "cursor-default"
             }`}
           >
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted">{item.label}</p>
-            <p className={`mt-2 font-serif-display tabular-nums text-2xl font-semibold ${item.tone === "danger" ? "text-danger" : "text-fg"}`}>
+            <span className="today-metric-icon" aria-hidden="true">{item.icon}</span>
+            <p className="today-metric-label text-[0.7rem] font-semibold uppercase tracking-[0.05em]">{item.label}</p>
+            <p className={`today-metric-value mt-2 font-serif-display tabular-nums text-2xl font-semibold ${item.tone === "danger" ? "text-danger" : ""}`}>
               {item.value}
             </p>
-            <p className="mt-1 text-xs text-muted">{item.detail}</p>
+            <p className="today-metric-detail mt-1 text-xs">{item.detail}</p>
           </button>
         ))}
       </div>

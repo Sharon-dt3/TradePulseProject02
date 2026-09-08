@@ -94,6 +94,93 @@ a {
   --color-bg: #e9dcda;
 }
 
+/* Establishes a prominent, color-coded financial snapshot at the top of Trader. */
+.today-metric {
+  border-color: transparent;
+  box-shadow: 0 10px 22px rgba(71, 32, 44, 0.13);
+  min-height: 8.25rem;
+}
+
+.today-metric::after {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 42%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.today-metric:hover {
+  box-shadow: 0 16px 30px rgba(71, 32, 44, 0.2);
+}
+
+.today-metric-label,
+.today-metric-value,
+.today-metric-detail,
+.today-metric-icon {
+  position: relative;
+  z-index: 1;
+}
+
+.today-metric-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.today-metric-value {
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(32, 11, 19, 0.18);
+}
+
+.today-metric-detail {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.today-metric-icon {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 0.7rem;
+  color: #ffffff;
+  display: flex;
+  font-size: 1.05rem;
+  font-weight: 800;
+  height: 2.25rem;
+  justify-content: center;
+  position: absolute;
+  right: 0.85rem;
+  top: 0.85rem;
+  width: 2.25rem;
+}
+
+.today-metric-portfolio {
+  background:
+    radial-gradient(circle at 90% 4%, rgba(255, 219, 229, 0.32), transparent 10rem),
+    linear-gradient(135deg, #861e3b, #57142a);
+}
+
+.today-metric-cash {
+  background:
+    radial-gradient(circle at 87% 8%, rgba(179, 249, 211, 0.31), transparent 10rem),
+    linear-gradient(135deg, #197452, #104c3a);
+}
+
+.today-metric-cash-warning {
+  background:
+    radial-gradient(circle at 87% 8%, rgba(255, 218, 165, 0.31), transparent 10rem),
+    linear-gradient(135deg, #9a4e19, #6f2d12);
+}
+
+.today-metric-orders {
+  background:
+    radial-gradient(circle at 87% 8%, rgba(255, 225, 163, 0.34), transparent 10rem),
+    linear-gradient(135deg, #a76210, #713d0b);
+}
+
+.today-metric-quotes {
+  background:
+    radial-gradient(circle at 87% 8%, rgba(173, 220, 255, 0.34), transparent 10rem),
+    linear-gradient(135deg, #2e608e, #234466);
+}
+
 /* Gives the Trader workspace a warmer contrast while retaining the shared theme. */
 .portfolio-command-center {
   border-color: #c48f9a;
