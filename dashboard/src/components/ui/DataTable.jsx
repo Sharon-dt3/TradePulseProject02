@@ -26,7 +26,7 @@ export default function DataTable({ columns, rows, loading, emptyMessage = "Noth
             {columns.map((column) => {
               const active = sort?.key === column.key;
               const isActionsColumn = column.key === "actions";
-              return <th key={column.key} scope="col" aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : undefined} className={`px-4 py-3 font-medium ${isActionsColumn ? "modern-data-table-actions-column" : "whitespace-nowrap"}`}>
+              return <th key={column.key} scope="col" aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : undefined} className={`py-3 font-medium ${isActionsColumn ? "modern-data-table-actions-column" : "whitespace-nowrap px-4"}`}>
                 {column.sortable ? <button type="button" onClick={() => toggleSort(column.key)} className="modern-data-table-sort inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:text-fg focus:outline-none focus:ring-2 focus:ring-primary/30">{column.label}<span aria-hidden="true">{active ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}</span><span className="sr-only">{active ? `, sorted ${sort.dir === "asc" ? "ascending" : "descending"}` : ", activate to sort"}</span></button> : column.label}
               </th>;
             })}
@@ -35,7 +35,7 @@ export default function DataTable({ columns, rows, loading, emptyMessage = "Noth
         <tbody>
           {loading && Array.from({ length: 3 }).map((_, index) => <tr key={`skeleton-${index}`} className="modern-data-table-skeleton">{columns.map((column) => <td key={column.key} className="px-4 py-3.5"><div className="h-4 w-24 animate-pulse rounded-full bg-line/60" /></td>)}</tr>)}
           {!loading && (!sortedRows || sortedRows.length === 0) && <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-muted">{emptyMessage}</td></tr>}
-          {!loading && sortedRows?.map((row, index) => <tr key={row[rowKey]} style={{ "--table-row-delay": `${Math.min(index * 45, 360)}ms` }} className={`modern-data-table-row ${rowClassName ? rowClassName(row) : ""}`}>{columns.map((column) => <td key={column.key} className={`px-4 py-3.5 text-fg ${column.key === "actions" ? "modern-data-table-actions-column" : "whitespace-nowrap"}`}>{column.render ? column.render(row) : (row[column.key] ?? "—")}</td>)}</tr>)}
+          {!loading && sortedRows?.map((row, index) => <tr key={row[rowKey]} style={{ "--table-row-delay": `${Math.min(index * 45, 360)}ms` }} className={`modern-data-table-row ${rowClassName ? rowClassName(row) : ""}`}>{columns.map((column) => <td key={column.key} className={`py-3.5 text-fg ${column.key === "actions" ? "modern-data-table-actions-column" : "whitespace-nowrap px-4"}`}>{column.render ? column.render(row) : (row[column.key] ?? "—")}</td>)}</tr>)}
         </tbody>
       </table>
     </div>

@@ -262,13 +262,23 @@ a {
 }
 
 .modern-data-table-actions-column {
-  min-width: 8.5rem;
+  min-width: 6.75rem;
+  padding-left: 0.65rem;
+  padding-right: 0.65rem;
   width: 1%;
 }
 
 .modern-data-table-actions-column > div {
+  gap: 0.35rem;
   flex-wrap: wrap;
   justify-content: flex-start;
+}
+
+.modern-data-table-actions-column button {
+  font-size: 0.7rem;
+  line-height: 1rem;
+  padding: 0.35rem 0.5rem;
+  white-space: nowrap;
 }
 
 .modern-data-table-row {
