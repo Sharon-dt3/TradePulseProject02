@@ -92,18 +92,18 @@ function MarketPulseCard({
     movement > 0 ? "text-success" : movement < 0 ? "text-danger" : "text-muted";
 
   return (
-    <article className="market-pulse-card rounded-xl border p-3">
+    <article className="market-pulse-card rounded-xl border p-4">
       <div className="flex items-start justify-between gap-2">
         <button
           type="button"
           onClick={() => onSelect(symbol)}
-          className="flex min-w-0 items-center gap-2.5 text-left"
+          className="flex min-w-0 items-center gap-3 text-left"
           aria-label={`Open ${symbol} quote details`}
         >
-          <SymbolLogo symbol={symbol} />
+          <SymbolLogo symbol={symbol} size="large" />
           <span>
-            <span className="block font-mono text-sm font-semibold text-fg">{symbol}</span>
-            <span className="mt-1 block font-serif-display tabular-nums text-xl font-semibold text-fg">
+            <span className="block font-mono text-base font-bold text-fg">{symbol}</span>
+            <span className="mt-1 block font-serif-display tabular-nums text-2xl font-bold text-fg">
               {quote ? formatMoney(quote.price) : "—"}
             </span>
           </span>
@@ -127,19 +127,19 @@ function MarketPulseCard({
         </div>
       </div>
 
-      <button type="button" onClick={() => onSelect(symbol)} className="market-pulse-chart mt-3 block w-full text-left" aria-label={`View ${symbol} trend`}>
+      <button type="button" onClick={() => onSelect(symbol)} className="market-pulse-chart mt-4 block w-full text-left" aria-label={`View ${symbol} trend`}>
         <PriceTrendChart symbol={symbol} points={points} />
       </button>
 
-      <div className="mt-2 flex items-center justify-between gap-2 text-xs">
-        <span className={`font-semibold ${movementTone}`}>{formatMovement(movement)}</span>
-        <span className={recentMovement > 0 ? "text-success" : recentMovement < 0 ? "text-danger" : "text-muted"}>
+      <div className="mt-3 flex items-center justify-between gap-2 text-sm">
+        <span className={`font-bold ${movementTone}`}>{formatMovement(movement)}</span>
+        <span className={`font-semibold ${recentMovement > 0 ? "text-success" : recentMovement < 0 ? "text-danger" : "text-muted"}`}>
           {recentMovement == null ? "Collecting ticks" : recentMovement > 0 ? "↑ latest tick" : recentMovement < 0 ? "↓ latest tick" : "• unchanged"}
         </span>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="mt-3 flex items-center justify-between gap-2">
         <Badge tone={status.tone}>{status.label}</Badge>
-        <span className="text-xs text-muted">{quote ? `${Math.round(quote.ageMs / 1000)}s ago` : "No quote"}</span>
+        <span className="text-xs font-semibold text-muted">{quote ? `${Math.round(quote.ageMs / 1000)}s ago` : "No quote"}</span>
       </div>
     </article>
   );
@@ -265,8 +265,8 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-muted">
           Price trends reflect quotes observed while this tab remains open.
         </p>
         <div className="flex flex-wrap gap-2">
@@ -282,7 +282,7 @@ export default function MarketPulse({ prices, history, demoEquitiesEnabled, onTr
           {Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-48 animate-pulse rounded-xl bg-line/60" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {orderedSymbols.map((symbol) => {
             const pinnedIndex = watchlist.indexOf(symbol);
             return (
