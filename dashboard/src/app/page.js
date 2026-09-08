@@ -7,7 +7,7 @@ import { decodeRoles } from "@/lib/roles";
 import Button from "@/components/ui/Button";
 import FormField, { inputCls } from "@/components/ui/FormField";
 import Alert from "@/components/ui/Alert";
-import AnimatedMarketBackdrop from "@/components/ui/AnimatedMarketBackdrop";
+import AnimatedMarketBackdrop, { TopMarketTicker } from "@/components/ui/AnimatedMarketBackdrop";
 
 const SIGN_IN_ROLES = [
   { role: "trader", label: "Trader", description: "Orders, positions, and markets", href: "/trader" },
@@ -65,6 +65,9 @@ export default function Home() {
   return (
     <main className="sign-in-workspace grid min-h-screen overflow-hidden lg:grid-cols-[minmax(0,1.1fr)_minmax(26rem,0.9fr)]">
       <AnimatedMarketBackdrop />
+      <div className="sign-in-market-ticker">
+        <TopMarketTicker />
+      </div>
       <section className="relative z-10 hidden overflow-hidden border-r border-[#b77b88]/40 p-12 lg:flex lg:flex-col lg:justify-between">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_25%,rgba(45,212,191,0.18),transparent_26rem),radial-gradient(circle_at_85%_80%,rgba(72,112,255,0.17),transparent_25rem)]" />
         <div className="relative flex items-center gap-3">

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { navItemsForRoles } from "@/lib/roles";
+import { TopMarketTicker } from "@/components/ui/AnimatedMarketBackdrop";
 
 /**
  * Provides the authenticated application frame, responsive navigation, and
@@ -15,6 +16,7 @@ export default function AppShell({ children }) {
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const navItems = navItemsForRoles(roles);
+  const showTopMarketTicker = ["/trader", "/markets", "/admin", "/compliance", "/risk"].includes(pathname);
 
   if (!user) return children;
 
@@ -116,6 +118,8 @@ export default function AppShell({ children }) {
             </button>
           </div>
         </header>
+
+        {showTopMarketTicker && <TopMarketTicker />}
 
         {navOpen && (
           <div
