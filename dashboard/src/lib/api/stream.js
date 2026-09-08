@@ -1,7 +1,7 @@
 import { ledgerCoreFetch } from "@/lib/api/client";
 
 const GATEWAY_URL =
-  process.env.NEXT_PUBLIC_GATEWAY_URL ?? "http://localhost:8081";
+  process.env.NEXT_PUBLIC_GATEWAY_URL ?? "";
 
 /**
  * Opens a ticket-authenticated SSE connection to the gateway. Never

@@ -4,23 +4,23 @@ output "load_balancer_dns_name" {
 }
 
 output "dashboard_url" {
-  description = "Production dashboard URL after DNS and ACM validation complete."
-  value       = "https://${local.public_hosts.dashboard}"
+  description = "Dashboard URL for the selected deployment mode."
+  value       = local.dashboard_origin
 }
 
 output "api_url" {
-  description = "Production ledger-core API base URL."
-  value       = "https://${local.public_hosts.ledger_core}"
+  description = "Ledger Core API base URL. Direct ALB mode uses the same origin with API paths."
+  value       = local.dashboard_origin
 }
 
 output "risk_url" {
-  description = "Production risk-engine API base URL."
-  value       = "https://${local.public_hosts.risk_engine}"
+  description = "Risk Engine API base URL. Direct ALB mode uses the /risk path."
+  value       = local.dashboard_origin
 }
 
 output "stream_url" {
-  description = "Production SSE gateway base URL."
-  value       = "https://${local.public_hosts.gateway}"
+  description = "SSE Gateway base URL. Direct ALB mode uses the /sse path."
+  value       = local.dashboard_origin
 }
 
 output "redis_primary_endpoint" {

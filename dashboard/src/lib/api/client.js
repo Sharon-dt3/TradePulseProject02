@@ -1,9 +1,9 @@
 import { supabase } from "@/lib/supabaseClient";
 
 const LEDGER_CORE_URL =
-  process.env.NEXT_PUBLIC_LEDGER_CORE_URL ?? "http://localhost:8080";
+  process.env.NEXT_PUBLIC_LEDGER_CORE_URL ?? "";
 const RISK_ENGINE_URL =
-  process.env.NEXT_PUBLIC_RISK_ENGINE_URL ?? "http://localhost:8001";
+  process.env.NEXT_PUBLIC_RISK_ENGINE_URL ?? "";
 
 /**
  * Returns the Authorization header for the current session, or an

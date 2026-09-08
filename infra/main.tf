@@ -24,7 +24,10 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 locals {
-  name_prefix = "${var.project_name}-${var.environment}"
+  name_prefix       = "${var.project_name}-${var.environment}"
+  direct_alb_origin = "http://${aws_lb.main.dns_name}"
+
+  dashboard_origin = var.deployment_mode == "direct_alb_http" ? local.direct_alb_origin : "https://${var.dashboard_domain}"
 
   service_images = {
     dashboard     = var.dashboard_image
@@ -36,8 +39,8 @@ locals {
 
   public_hosts = {
     dashboard   = var.dashboard_domain
-    ledger_core = "api.${var.dashboard_domain}"
-    risk_engine = "risk.${var.dashboard_domain}"
-    gateway     = "stream.${var.dashboard_domain}"
+    ledger_core = var.dashboard_domain == null ? null : "api.${var.dashboard_domain}"
+    risk_engine = var.dashboard_domain == null ? null : "risk.${var.dashboard_domain}"
+    gateway     = var.dashboard_domain == null ? null : "stream.${var.dashboard_domain}"
   }
 }

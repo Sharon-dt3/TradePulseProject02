@@ -84,7 +84,7 @@ locals {
       environment = [
         { name = "REDIS_HOST", value = local.redis_host },
         { name = "REDIS_PORT", value = "6379" },
-        { name = "LEDGER_CORS_ALLOWED_ORIGINS", value = "https://${local.public_hosts.dashboard}" }
+        { name = "LEDGER_CORS_ALLOWED_ORIGINS", value = local.dashboard_origin }
       ]
       secrets = local.backend_secrets
     }
@@ -95,7 +95,7 @@ locals {
       environment = [
         { name = "REDIS_HOST", value = local.redis_host },
         { name = "REDIS_PORT", value = "6379" },
-        { name = "DASHBOARD_ALLOWED_ORIGIN", value = "https://${local.public_hosts.dashboard}" },
+        { name = "DASHBOARD_ALLOWED_ORIGIN", value = local.dashboard_origin },
         { name = "RISK_FREE_RATE_ANNUAL", value = "0.00" }
       ]
       secrets = local.backend_secrets
@@ -107,7 +107,7 @@ locals {
       environment = [
         { name = "REDIS_HOST", value = local.redis_host },
         { name = "REDIS_PORT", value = "6379" },
-        { name = "GATEWAY_CORS_ALLOWED_ORIGINS", value = "https://${local.public_hosts.dashboard}" }
+        { name = "GATEWAY_CORS_ALLOWED_ORIGINS", value = local.dashboard_origin }
       ]
       secrets = [
         { name = "SUPABASE_JWKS_URL", valueFrom = "${var.supabase_runtime_secret_arn}:SUPABASE_JWKS_URL::" },
@@ -186,5 +186,5 @@ resource "aws_ecs_service" "service" {
     }
   }
 
-  depends_on = [aws_lb_listener.https]
+  depends_on = [aws_lb_listener.http]
 }

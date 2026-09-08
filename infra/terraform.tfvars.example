@@ -1,8 +1,7 @@
-aws_region       = "us-east-1"
-project_name     = "tradepulse"
-environment      = "production"
-dashboard_domain = "tradepulse.example.com"
-route53_zone_id  = "Z0123456789EXAMPLE"
+aws_region      = "us-east-1"
+project_name    = "tradepulse"
+environment     = "production"
+deployment_mode = "direct_alb_http"
 
 # Use immutable ECR image tags or digests produced by your CI pipeline.
 dashboard_image     = "123456789012.dkr.ecr.us-east-1.amazonaws.com/tradepulse-dashboard:git-sha"
@@ -11,6 +10,6 @@ risk_engine_image   = "123456789012.dkr.ecr.us-east-1.amazonaws.com/tradepulse-r
 gateway_image       = "123456789012.dkr.ecr.us-east-1.amazonaws.com/tradepulse-gateway:git-sha"
 tick_producer_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/tradepulse-tick-producer:git-sha"
 
-# Existing AWS Secrets Manager ARNs. Do not place their values in Terraform.
+# Existing AWS Secrets Manager ARNs. Do not place secret values in Terraform.
 supabase_runtime_secret_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:tradepulse/production/supabase"
 finnhub_secret_arn          = "arn:aws:secretsmanager:us-east-1:123456789012:secret:tradepulse/production/finnhub"

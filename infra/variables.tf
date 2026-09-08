@@ -16,13 +16,26 @@ variable "environment" {
   default     = "production"
 }
 
-variable "dashboard_domain" {
-  description = "Fully qualified dashboard hostname, such as tradepulse.example.com."
+variable "deployment_mode" {
+  description = "Use direct_alb_http for a temporary ALB URL deployment or custom_domain_https after a domain is configured."
   type        = string
+  default     = "direct_alb_http"
+
+  validation {
+    condition     = contains(["direct_alb_http", "custom_domain_https"], var.deployment_mode)
+    error_message = "deployment_mode must be either direct_alb_http or custom_domain_https."
+  }
+}
+
+variable "dashboard_domain" {
+  description = "Fully qualified dashboard hostname, required only for custom_domain_https mode."
+  type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "route53_zone_id" {
-  description = "Route 53 hosted-zone ID for dashboard_domain. Leave null when DNS is managed outside Route 53."
+  description = "Route 53 hosted-zone ID for dashboard_domain. Required only when Terraform manages custom-domain DNS."
   type        = string
   default     = null
   nullable    = true
