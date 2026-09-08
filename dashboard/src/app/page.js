@@ -7,6 +7,7 @@ import { decodeRoles } from "@/lib/roles";
 import Button from "@/components/ui/Button";
 import FormField, { inputCls } from "@/components/ui/FormField";
 import Alert from "@/components/ui/Alert";
+import AnimatedMarketBackdrop from "@/components/ui/AnimatedMarketBackdrop";
 
 const SIGN_IN_ROLES = [
   { role: "trader", label: "Trader", description: "Orders, positions, and markets", href: "/trader" },
@@ -62,8 +63,9 @@ export default function Home() {
   }
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[minmax(0,1.1fr)_minmax(26rem,0.9fr)]">
-      <section className="relative hidden overflow-hidden border-r border-[#1d2b43] p-12 lg:flex lg:flex-col lg:justify-between">
+    <main className="sign-in-workspace grid min-h-screen overflow-hidden lg:grid-cols-[minmax(0,1.1fr)_minmax(26rem,0.9fr)]">
+      <AnimatedMarketBackdrop />
+      <section className="relative z-10 hidden overflow-hidden border-r border-[#b77b88]/40 p-12 lg:flex lg:flex-col lg:justify-between">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_25%,rgba(45,212,191,0.18),transparent_26rem),radial-gradient(circle_at_85%_80%,rgba(72,112,255,0.17),transparent_25rem)]" />
         <div className="relative flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lg font-black text-primary-fg shadow-[0_0_28px_rgba(45,212,191,0.25)]">
@@ -91,8 +93,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="flex items-center justify-center px-5 py-10 sm:px-8">
-        <div className="w-full max-w-sm">
+      <section className="relative z-10 flex items-center justify-center px-5 py-10 sm:px-8">
+        <div className="w-full max-w-sm rounded-2xl border border-white/70 bg-[#fffaf9]/85 p-5 shadow-[0_18px_45px_rgba(92,30,48,0.16)] backdrop-blur-sm sm:p-7">
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-fg">T</span>

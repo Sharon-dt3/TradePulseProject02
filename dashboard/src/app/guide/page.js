@@ -400,8 +400,8 @@ function TradePulseGuide() {
         <div className="guide-orb guide-orb-one" />
         <div className="guide-orb guide-orb-two" />
         <div className="guide-grid" />
-        {MARKET_SYMBOLS.map((symbol) => (
-          <span key={symbol} className="guide-market-symbol">
+        {MARKET_SYMBOLS.map((symbol, index) => (
+          <span key={symbol} className={`guide-market-symbol guide-symbol-${index + 1}`}>
             {symbol}
           </span>
         ))}
@@ -424,7 +424,22 @@ function TradePulseGuide() {
         <div className="absolute -right-24 -top-28 h-64 w-64 rounded-full bg-[#f0bdc7]/50 blur-3xl" />
         <div className="absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-[#c98e9d]/35 blur-3xl" />
 
-        <div className="relative">
+        <div key={slide.title} className="guide-slide-content relative">
+          <div className="guide-market-ticker" aria-hidden="true">
+            <div className="guide-market-ticker-track">
+              {[...MARKET_SYMBOLS, ...MARKET_SYMBOLS].map((symbol, index) => (
+                <span key={`${symbol}-${index}`} className="guide-market-ticker-item">
+                  <span className="guide-market-ticker-dot" />
+                  {symbol}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+            <span className="guide-live-indicator" aria-hidden="true" />
+            Presentation in motion
+          </div>
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">{slide.eyebrow}</p>
           <h2 className="mt-4 max-w-4xl font-serif-display text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
             {slide.title}
@@ -484,6 +499,9 @@ function TradePulseGuide() {
         </div>
 
         <p className="text-xs text-muted">Use ← / → arrows, Home, or End to present.</p>
+      </div>
+      <div className="guide-slide-progress mt-3" aria-hidden="true">
+        <span style={{ width: `${((currentSlide + 1) / SLIDES.length) * 100}%` }} />
       </div>
     </div>
   );
