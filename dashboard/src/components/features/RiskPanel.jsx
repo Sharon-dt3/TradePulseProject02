@@ -152,17 +152,17 @@ function volatilityExplanation(analysis, history) {
   return `${metricChange(history, "volatility", formatPct)} ${recentTradeContext(history)}`;
 }
 
-function RiskMetricDetails({ label, value, children }) {
+function RiskMetricDetails({ label, value, variant, children }) {
   return (
-    <details className="group rounded-lg bg-bg px-3 py-2.5">
+    <details className={`risk-live-metric risk-live-metric-${variant} group rounded-xl px-3 py-3`}>
       <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
         <span>
-          <span className="block text-xs text-muted">{label}</span>
-          <span className="mt-1 block font-serif-display tabular-nums text-lg font-semibold text-fg">{value}</span>
+          <span className="block text-xs font-bold uppercase tracking-[0.06em]">{label}</span>
+          <span className="mt-1 block font-serif-display tabular-nums text-xl font-bold">{value}</span>
         </span>
-        <span aria-hidden="true" className="pt-1 text-base text-muted transition-transform group-open:rotate-45">+</span>
+        <span aria-hidden="true" className="risk-live-metric-expand pt-1 text-xl font-bold transition-transform group-open:rotate-45">+</span>
       </summary>
-      <p className="mt-3 border-t border-line pt-3 text-xs leading-relaxed text-muted">{children}</p>
+      <p className="risk-live-metric-evidence mt-3 border-t pt-3 text-xs leading-relaxed">{children}</p>
     </details>
   );
 }
@@ -189,13 +189,13 @@ function DetailedRiskMetrics({ analysis, history }) {
   return (
     <div className="space-y-3">
       {analysis.price_data_stale && (
-        <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
+        <p className="risk-live-alert rounded-xl px-3 py-2.5 text-sm font-semibold text-warning">
           Delayed market data: {analysis.stale_symbols.join(", ")}. Risk estimates may
           not reflect their latest prices.
         </p>
       )}
       {quoteFreshness.length > 0 && (
-        <details className="group rounded-lg bg-bg px-3 py-2 text-xs text-muted">
+        <details className="risk-live-freshness group rounded-xl px-3 py-2.5 text-xs text-muted">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
             <span className="font-medium text-fg">Quote freshness by holding</span>
             <span aria-hidden="true" className="text-base transition-transform group-open:rotate-45">+</span>
@@ -224,16 +224,17 @@ function DetailedRiskMetrics({ analysis, history }) {
         <RiskMetricDetails
           label="One-period 95% VaR"
           value={`${formatMoney(analysis.var_95)}${varPercent !== null ? ` / ${formatPct(varPercent)}` : ""}`}
+          variant="var"
         >
           This is the modelled one-period loss threshold at 95% confidence, calculated as 1.645 × current volatility × absolute portfolio value. {metricChange(history, "var_95", formatMoney)} {recentTradeContext(history)}
         </RiskMetricDetails>
-        <RiskMetricDetails label="Historical VaR" value={formatMoney(analysis.historical_var_95)}>
+        <RiskMetricDetails label="Historical VaR" value={formatMoney(analysis.historical_var_95)} variant="historical">
           This is the loss at the 95% tail cutoff of the observed aligned portfolio-return sample. It is based on actual persisted return outcomes rather than the parametric volatility formula. Historical VaR and expected shortfall are calculated live; prior values are not stored in the current snapshot history. {recentTradeContext(history)}
         </RiskMetricDetails>
-        <RiskMetricDetails label="Expected shortfall" value={formatMoney(analysis.expected_shortfall_95)}>
+        <RiskMetricDetails label="Expected shortfall" value={formatMoney(analysis.expected_shortfall_95)} variant="shortfall">
           This is the average loss among the worst observed 5% of aligned return outcomes. It answers “how severe were the tail losses?” rather than only identifying the cutoff. It is calculated live; prior expected-shortfall values are not stored in the current snapshot history. {recentTradeContext(history)}
         </RiskMetricDetails>
-        <RiskMetricDetails label="Volatility" value={formatPct(analysis.volatility)}>
+        <RiskMetricDetails label="Volatility" value={formatPct(analysis.volatility)} variant="volatility">
           Volatility is the standard deviation of aligned observed portfolio returns in the current risk window. {volatilityExplanation(analysis, history)}
         </RiskMetricDetails>
       </div>
@@ -241,7 +242,7 @@ function DetailedRiskMetrics({ analysis, history }) {
       <div className="grid gap-3 border-t border-line pt-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,1fr)]">
         {analysis.largest_position && (
           <div
-            className={`rounded-lg px-3 py-2 text-sm ${
+            className={`risk-live-concentration rounded-xl px-3 py-3 text-sm ${
               analysis.concentration_warning
                 ? "bg-warning/10 text-warning"
                 : "bg-bg text-fg"
@@ -253,7 +254,7 @@ function DetailedRiskMetrics({ analysis, history }) {
           </div>
         )}
 
-        <div className="rounded-lg bg-bg px-3 py-2">
+        <div className="risk-live-contributions rounded-xl px-3 py-3">
           <p className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
             Position risk contribution
           </p>
@@ -354,6 +355,7 @@ export default function RiskPanel() {
     <Card
       title="Live risk analysis"
       action={<LiveDot connected={liveConnected} />}
+      className="risk-live-panel"
     >
       {notFound && (
         <p className="text-sm text-muted">
@@ -370,13 +372,13 @@ export default function RiskPanel() {
           <DetailedRiskMetrics analysis={analysis} history={history} />
 
           {!analysis.insufficient_history && snapshot?.explanation && (
-            <p className="mt-3 text-xs leading-relaxed text-muted">
+            <p className="risk-live-summary mt-3 text-sm leading-relaxed text-muted">
               {snapshot.explanation}
             </p>
           )}
 
           {history && (
-            <details className="group mt-4 border-t border-line pt-3">
+            <details className="risk-live-trend group mt-4 border-t border-line pt-3">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.05em] text-muted">
                 Recorded risk trend
                 <span aria-hidden="true" className="text-base transition-transform group-open:rotate-45">

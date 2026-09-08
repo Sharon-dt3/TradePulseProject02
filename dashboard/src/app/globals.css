@@ -477,6 +477,107 @@ a {
   box-shadow: inset 0 0 0 1px rgba(143, 51, 73, 0.06);
 }
 
+/* Turns current risk evidence into a clear, expandable monitoring console. */
+.risk-live-panel {
+  border-color: #b77b88;
+  background:
+    radial-gradient(circle at 94% 3%, rgba(197, 84, 111, 0.18), transparent 17rem),
+    linear-gradient(145deg, #f4e3e5, #ecd6db);
+  box-shadow: 0 14px 32px rgba(92, 30, 48, 0.13);
+}
+
+.risk-live-panel > div {
+  padding: 1.15rem;
+}
+
+.risk-live-alert {
+  background: linear-gradient(120deg, #fff0cf, #fff8e9);
+  border: 1px solid rgba(167, 98, 16, 0.28);
+  box-shadow: 0 7px 16px rgba(125, 74, 17, 0.1);
+}
+
+.risk-live-freshness,
+.risk-live-contributions {
+  background: rgba(255, 252, 251, 0.78);
+  border: 1px solid rgba(196, 143, 154, 0.56);
+}
+
+.risk-live-freshness summary {
+  font-weight: 700;
+}
+
+.risk-live-metric {
+  border: 1px solid transparent;
+  box-shadow: 0 10px 22px rgba(60, 30, 41, 0.14);
+  color: #ffffff;
+  overflow: hidden;
+  position: relative;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.risk-live-metric::after {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 47%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.risk-live-metric summary,
+.risk-live-metric-evidence {
+  position: relative;
+  z-index: 1;
+}
+
+.risk-live-metric:hover,
+.risk-live-metric[open] {
+  box-shadow: 0 16px 30px rgba(60, 30, 41, 0.22);
+  transform: translateY(-2px);
+}
+
+.risk-live-metric-var { background: linear-gradient(135deg, #8b1f3d, #591329); }
+.risk-live-metric-historical { background: linear-gradient(135deg, #9c5911, #703b0a); }
+.risk-live-metric-shortfall { background: linear-gradient(135deg, #a74336, #742624); }
+.risk-live-metric-volatility { background: linear-gradient(135deg, #285d8b, #193e63); }
+
+.risk-live-metric-expand {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.risk-live-metric-evidence {
+  border-color: rgba(255, 255, 255, 0.24);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.risk-live-concentration {
+  border: 1px solid rgba(167, 98, 16, 0.25);
+  box-shadow: 0 8px 18px rgba(125, 74, 17, 0.08);
+}
+
+.risk-live-contributions {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.risk-live-summary {
+  background: rgba(255, 251, 250, 0.64);
+  border-left: 3px solid #9a2d49;
+  border-radius: 0 0.65rem 0.65rem 0;
+  padding: 0.65rem 0.8rem;
+}
+
+.risk-live-trend summary {
+  color: #67464e;
+}
+
+.risk-live-trend[open] svg {
+  animation: risk-live-trend-enter 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes risk-live-trend-enter {
+  from { opacity: 0; transform: translateY(8px) scaleY(0.75); transform-origin: bottom; }
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
 /* Gives the in-app guide a clear presentation surface while retaining the dashboard palette. */
 .guide-workspace {
   --color-bg: #efe4e2;
@@ -1218,6 +1319,7 @@ a {
   .animated-market-price-line,
   .animated-market-symbol,
   .portfolio-command-center-equation-operator,
+  .risk-live-trend[open] svg,
   .top-market-ticker-track,
   .top-market-ticker-live-dot,
   .sidebar-live-orb,
