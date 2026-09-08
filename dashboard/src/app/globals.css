@@ -169,6 +169,16 @@ a {
   box-shadow: inset 0 0 0 1px rgba(143, 51, 73, 0.06);
 }
 
+/* Gives the in-app guide a clear presentation surface while retaining the dashboard palette. */
+.guide-workspace {
+  --color-bg: #efe4e2;
+}
+
+.guide-deck {
+  background:
+    linear-gradient(135deg, rgba(255, 252, 251, 0.96) 0%, rgba(248, 227, 232, 0.96) 100%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

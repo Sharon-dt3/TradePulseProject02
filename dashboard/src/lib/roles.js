@@ -49,6 +49,7 @@ export const NAV_ITEMS = [
   { role: "compliance", href: "/compliance", label: "Compliance" },
   { role: "risk_manager", href: "/risk", label: "Risk" },
   { role: "admin", href: "/admin", label: "Admin" },
+  { href: "/guide", label: "TradePulse Guide" },
 ];
 
 /** Nav items for a set of held roles, de-duplicated by href. */
@@ -56,7 +57,7 @@ export function navItemsForRoles(roles) {
   const seen = new Set();
   const items = [];
   for (const item of NAV_ITEMS) {
-    if (roles.includes(item.role) && !seen.has(item.href)) {
+    if ((!item.role || roles.includes(item.role)) && !seen.has(item.href)) {
       seen.add(item.href);
       items.push(item);
     }
