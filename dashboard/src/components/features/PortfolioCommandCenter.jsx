@@ -29,12 +29,17 @@ function Movement({ value }) {
   );
 }
 
-function MetricCard({ label, value, detail, tone = "text-fg" }) {
+function MetricCard({ label, value, detail, tone = "text-fg", variant, icon }) {
   return (
-    <div className="portfolio-command-center-metric rounded-xl border border-line bg-bg/70 p-3">
-      <p className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted">{label}</p>
-      <p className={`mt-1 font-serif-display text-xl font-semibold tabular-nums ${tone}`}>{value}</p>
-      <p className="mt-1 text-xs text-muted">{detail}</p>
+    <div
+      className={`portfolio-command-center-metric rounded-xl border border-line bg-bg/70 p-3 ${
+        variant ? `portfolio-command-center-metric-${variant}` : ""
+      }`}
+    >
+      {icon && <span className="portfolio-command-center-metric-icon" aria-hidden="true">{icon}</span>}
+      <p className="portfolio-command-center-metric-label text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted">{label}</p>
+      <p className={`portfolio-command-center-metric-value mt-1 font-serif-display text-xl font-semibold tabular-nums ${tone}`}>{value}</p>
+      <p className="portfolio-command-center-metric-detail mt-1 text-xs text-muted">{detail}</p>
     </div>
   );
 }
@@ -116,10 +121,10 @@ export default function PortfolioCommandCenter({
         className="portfolio-command-center"
       >
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <MetricCard label="Portfolio value" value={formatMoney(portfolioValue)} detail="Cash plus quoted holdings" />
-          <MetricCard label="Cash available" value={formatMoney(cash)} detail={cash < 0 ? "Review buying power" : "Available before settlement"} tone={cash < 0 ? "text-danger" : "text-fg"} />
-          <MetricCard label="Holdings" value={formatMoney(holdings.holdingsValue)} detail={`${holdings.positions.length} open position${holdings.positions.length === 1 ? "" : "s"}`} />
-          <MetricCard label="Open orders" value={formatNumber(activeOrders.length, 0)} detail={activeOrders.length ? "Working instructions" : "No active instructions"} />
+          <MetricCard label="Portfolio value" value={formatMoney(portfolioValue)} detail="Cash plus quoted holdings" variant="portfolio" icon="◈" />
+          <MetricCard label="Cash available" value={formatMoney(cash)} detail={cash < 0 ? "Review buying power" : "Available before settlement"} tone={cash < 0 ? "text-danger" : "text-fg"} variant={cash < 0 ? "cash-warning" : "cash"} icon="$" />
+          <MetricCard label="Holdings" value={formatMoney(holdings.holdingsValue)} detail={`${holdings.positions.length} open position${holdings.positions.length === 1 ? "" : "s"}`} variant="holdings" icon="◫" />
+          <MetricCard label="Open orders" value={formatNumber(activeOrders.length, 0)} detail={activeOrders.length ? "Working instructions" : "No active instructions"} variant="orders" icon="↗" />
         </div>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(14rem,0.9fr)]">

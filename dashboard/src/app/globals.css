@@ -195,10 +195,83 @@ a {
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"] {
+  border-color: transparent;
+  box-shadow: 0 10px 22px rgba(71, 32, 44, 0.14);
+  min-height: 7.8rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"]::after {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 45%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"] .portfolio-command-center-metric-label,
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"] .portfolio-command-center-metric-value,
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"] .portfolio-command-center-metric-detail,
+.portfolio-command-center-metric-icon {
+  position: relative;
+  z-index: 1;
+}
+
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"] .portfolio-command-center-metric-label,
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"] .portfolio-command-center-metric-detail {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"] .portfolio-command-center-metric-value {
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(32, 11, 19, 0.18);
+}
+
+.portfolio-command-center-metric-icon {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 0.65rem;
+  color: #ffffff;
+  display: flex;
+  font-size: 0.95rem;
+  font-weight: 800;
+  height: 2rem;
+  justify-content: center;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+  width: 2rem;
+}
+
+.portfolio-command-center-metric-portfolio {
+  background: radial-gradient(circle at 89% 4%, rgba(255, 219, 229, 0.3), transparent 9rem), linear-gradient(135deg, #861e3b, #57142a);
+}
+
+.portfolio-command-center-metric-cash {
+  background: radial-gradient(circle at 89% 4%, rgba(179, 249, 211, 0.3), transparent 9rem), linear-gradient(135deg, #197452, #104c3a);
+}
+
+.portfolio-command-center-metric-cash-warning,
+.portfolio-command-center-metric-orders {
+  background: radial-gradient(circle at 89% 4%, rgba(255, 225, 163, 0.32), transparent 9rem), linear-gradient(135deg, #a76210, #713d0b);
+}
+
+.portfolio-command-center-metric-holdings {
+  background: radial-gradient(circle at 89% 4%, rgba(173, 220, 255, 0.31), transparent 9rem), linear-gradient(135deg, #2e608e, #234466);
+}
+
 .portfolio-command-center-metric:hover {
   border-color: #8f3349;
   box-shadow: 0 8px 18px rgba(92, 30, 48, 0.1);
   transform: translateY(-2px);
+}
+
+.portfolio-command-center-metric[class*="portfolio-command-center-metric-"]:hover {
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 16px 30px rgba(71, 32, 44, 0.22);
 }
 
 .portfolio-command-center button {
