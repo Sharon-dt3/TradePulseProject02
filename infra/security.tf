@@ -1,34 +1,64 @@
-# Phase 0: security groups, with no RDS ingress rule.
-#
-# Greenfield — there was never an RDS instance in this repo to remove
-# ingress for. Database traffic goes to Supabase over the public internet
-# (TLS-terminated at Supabase's pooler/direct endpoints), not to an
-# in-VPC RDS instance, so no inbound rule for Postgres (5432/6543) is
-# needed here at all.
+resource "aws_security_group" "alb" {
+  name        = "${local.name_prefix}-alb"
+  description = "Accept public HTTPS traffic for TradePulse."
+  vpc_id      = aws_vpc.main.id
 
-resource "aws_security_group" "app_egress" {
-  name        = "tradepulse-app-egress"
-  description = "Egress-only security group for ledger-core/risk-engine — outbound HTTPS to Supabase, no inbound DB rule since there is no RDS instance"
-
-  egress {
-    description = "HTTPS to Supabase (pooled + direct Postgres, both over TLS on the pooler/direct endpoints; also JWKS/Auth API)"
+  ingress {
+    description = "HTTPS from the internet"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Supavisor pooled (6543) and direct (5432) both ride over the same
-  # public internet path as HTTPS in Supabase's managed setup — no
-  # separate port-level egress rule is required beyond 443 in the common
-  # case. If a future networking decision needs explicit 5432/6543 egress,
-  # add it here with a comment explaining why, rather than silently.
-
-  tags = {
-    Project = "tradepulse"
-    Phase   = "0"
+  egress {
+    description = "Traffic to ECS services"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-# No aws_db_instance, no RDS security group, no RDS ingress rule anywhere
-# in this file or this repo (see infra/secrets.tf's OD-0/OD-1 note).
+resource "aws_security_group" "service" {
+  name        = "${local.name_prefix}-services"
+  description = "Only the application load balancer may reach public ECS services."
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Dashboard and API traffic from ALB"
+    from_port       = 3000
+    to_port         = 8081
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  egress {
+    description = "Outbound access to Supabase, AWS APIs, and external market feeds"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "redis" {
+  name        = "${local.name_prefix}-redis"
+  description = "Only ECS services may access the Redis stream broker."
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Redis streams from ECS tasks"
+    from_port       = 6379
+    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = [aws_security_group.service.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}

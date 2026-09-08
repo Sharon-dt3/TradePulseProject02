@@ -1,0 +1,13 @@
+.git
+.gitignore
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.next
+**/target
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+kavia-docs
+downloaded_statement.pdf
