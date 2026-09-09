@@ -14,7 +14,6 @@ import PositionsTable from "@/components/features/PositionsTable";
 import TradesTable from "@/components/features/TradesTable";
 import TransactionsTable from "@/components/features/TransactionsTable";
 import MarketPricesTable from "@/components/features/MarketPricesTable";
-import MarketPriceSparklines from "@/components/features/MarketPriceSparklines";
 import StatementForm from "@/components/features/StatementForm";
 import RiskPanel from "@/components/features/RiskPanel";
 import TabBar from "@/components/ui/TabBar";
@@ -343,10 +342,6 @@ function TraderWorkspace() {
           {account && <StatementForm accountId={account.accountId} />}
         </Card>
         <MarketPricesTable prices={marketPrices} />
-      </div>
-
-      <div className="mt-4">
-        <MarketPriceSparklines latest={marketMonitorPrices} history={marketMonitorHistory} />
       </div>
     </div>
   );
