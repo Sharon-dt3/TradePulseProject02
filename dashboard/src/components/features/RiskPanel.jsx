@@ -152,6 +152,43 @@ function volatilityExplanation(analysis, history) {
   return `${metricChange(history, "volatility", formatPct)} ${recentTradeContext(history)}`;
 }
 
+function portfolioDriverExplanation(analysis) {
+  const portfolioValue = Number(analysis.portfolio_value);
+  const portfolioText = Number.isFinite(portfolioValue)
+    ? `The current portfolio value used in this calculation is ${formatMoney(portfolioValue)}.`
+    : "A current portfolio value is not available for this calculation.";
+
+  if (!analysis.largest_position || analysis.concentration_pct == null) {
+    return portfolioText;
+  }
+
+  return `${portfolioText} ${analysis.largest_position} is the largest holding at ${formatPct(
+    analysis.concentration_pct
+  )} of portfolio value, so its price movement is the main current position-level driver.`;
+}
+
+function sampleQualityExplanation(analysis) {
+  const sampleSize = Number(analysis.sample_size);
+  const quoteTime = analysis.data_as_of
+    ? new Date(analysis.data_as_of).toLocaleString()
+    : "an unavailable time";
+  const quoteStatus = analysis.price_data_stale
+    ? "One or more required quotes are delayed, so the estimate may not reflect the latest market prices."
+    : "No required quote is currently marked delayed.";
+
+  return `This calculation uses ${sampleSize} aligned observed return${
+    sampleSize === 1 ? "" : "s"
+  } from persisted quotes, with the oldest latest-held quote timestamp at ${quoteTime}. ${quoteStatus} A short or unusually calm sample can understate future risk.`;
+}
+
+function tailSampleExplanation(analysis) {
+  const sampleSize = Number(analysis.sample_size);
+  const tailCount = Math.max(1, Math.floor(sampleSize * 0.05));
+  return `The current return sample contains ${sampleSize} aligned observations, so the 5% tail uses ${tailCount} worst observed return${
+    tailCount === 1 ? "" : "s"
+  }. When only one tail observation is used, historical VaR and expected shortfall can be identical; that reflects the sample size, not two independently equal forecasts.`;
+}
+
 function RiskMetricDetails({ label, value, variant, children }) {
   return (
     <details className={`risk-live-metric risk-live-metric-${variant} group rounded-xl px-3 py-3`}>
@@ -226,16 +263,16 @@ function DetailedRiskMetrics({ analysis, history }) {
           value={`${formatMoney(analysis.var_95)}${varPercent !== null ? ` / ${formatPct(varPercent)}` : ""}`}
           variant="var"
         >
-          This is the modelled one-period loss threshold at 95% confidence, calculated as 1.645 × current volatility × absolute portfolio value. {metricChange(history, "var_95", formatMoney)} {recentTradeContext(history)}
+          Based on the recent observed return sample, this model estimates a loss greater than {formatMoney(analysis.var_95)} in roughly 5% of comparable one-period observations. It is calculated as 1.645 × current volatility × absolute portfolio value; it is an estimate, not a guaranteed maximum loss. {portfolioDriverExplanation(analysis)} {sampleQualityExplanation(analysis)} {metricChange(history, "var_95", formatMoney)} {recentTradeContext(history)}
         </RiskMetricDetails>
         <RiskMetricDetails label="Historical VaR" value={formatMoney(analysis.historical_var_95)} variant="historical">
-          This is the loss at the 95% tail cutoff of the observed aligned portfolio-return sample. It is based on actual persisted return outcomes rather than the parametric volatility formula. Historical VaR and expected shortfall are calculated live; prior values are not stored in the current snapshot history. {recentTradeContext(history)}
+          This is the loss at the 95% tail cutoff of the observed aligned portfolio-return sample. Unlike parametric VaR, it uses actual persisted return outcomes rather than the current volatility formula. {tailSampleExplanation(analysis)} {portfolioDriverExplanation(analysis)} Historical VaR is calculated live, so a prior value is not stored for a snapshot-to-snapshot comparison. {recentTradeContext(history)}
         </RiskMetricDetails>
         <RiskMetricDetails label="Expected shortfall" value={formatMoney(analysis.expected_shortfall_95)} variant="shortfall">
-          This is the average loss among the worst observed 5% of aligned return outcomes. It answers “how severe were the tail losses?” rather than only identifying the cutoff. It is calculated live; prior expected-shortfall values are not stored in the current snapshot history. {recentTradeContext(history)}
+          This is the average loss among the worst observed 5% of aligned return outcomes. It answers “how severe were the tail losses?” rather than only identifying the tail cutoff. {tailSampleExplanation(analysis)} It is calculated live from the same persisted return sample as Historical VaR, so it is not stored as a separate historical trend yet. {recentTradeContext(history)}
         </RiskMetricDetails>
         <RiskMetricDetails label="Volatility" value={formatPct(analysis.volatility)} variant="volatility">
-          Volatility is the standard deviation of aligned observed portfolio returns in the current risk window. {volatilityExplanation(analysis, history)}
+          Volatility is the standard deviation of aligned observed portfolio returns in the current risk window: higher volatility means larger typical period-to-period portfolio swings. {volatilityExplanation(analysis, history)} {portfolioDriverExplanation(analysis)} {sampleQualityExplanation(analysis)}
         </RiskMetricDetails>
       </div>
 
